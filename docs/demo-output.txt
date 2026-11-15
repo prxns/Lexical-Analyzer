@@ -1,0 +1,144 @@
+Lexical Analyzer | C11 subset
+Source: samples/demo.c
+
+No.    Lexeme                    Category      Line   Column
+1      #                         Punctuator    1      1
+2      include                   Identifier    1      2
+3      <                         Operator      1      10
+4      stdio                     Identifier    1      11
+5      .                         Punctuator    1      16
+6      h                         Identifier    1      17
+7      >                         Operator      1      18
+8      int                       Keyword       4      1
+9      main                      Identifier    4      5
+10     (                         Punctuator    4      9
+11     void                      Keyword       4      10
+12     )                         Punctuator    4      14
+13     {                         Punctuator    4      16
+14     int                       Keyword       5      5
+15     values                    Identifier    5      9
+16     [                         Punctuator    5      15
+17     3                         Integer       5      16
+18     ]                         Punctuator    5      17
+19     =                         Operator      5      19
+20     {                         Punctuator    5      21
+21     10                        Integer       5      22
+22     ,                         Punctuator    5      24
+23     075                       Integer       5      26
+24     ,                         Punctuator    5      29
+25     0x2A                      Integer       5      31
+26     }                         Punctuator    5      35
+27     ;                         Punctuator    5      36
+28     unsigned                  Keyword       6      5
+29     int                       Keyword       6      14
+30     limit                     Identifier    6      18
+31     =                         Operator      6      24
+32     25U                       Integer       6      26
+33     ;                         Punctuator    6      29
+34     double                    Keyword       7      5
+35     scale                     Identifier    7      12
+36     =                         Operator      7      18
+37     .5                        Float         7      20
+38     ,                         Punctuator    7      22
+39     epsilon                   Identifier    7      24
+40     =                         Operator      7      32
+41     2e-3                      Float         7      34
+42     ;                         Punctuator    7      38
+43     char                      Keyword       8      5
+44     grade                     Identifier    8      10
+45     =                         Operator      8      16
+46     'A'                       Character     8      18
+47     ,                         Punctuator    8      21
+48     newline                   Identifier    8      23
+49     =                         Operator      8      31
+50     '\\n'                     Character     8      33
+51     ;                         Punctuator    8      37
+52     const                     Keyword       9      5
+53     char                      Keyword       9      11
+54     *                         Operator      9      16
+55     message                   Identifier    9      17
+56     =                         Operator      9      25
+57     \"Total:\\t\"             String        9      27
+58     ;                         Punctuator    9      37
+59     int                       Keyword       10     5
+60     total                     Identifier    10     9
+61     =                         Operator      10     15
+62     0                         Integer       10     17
+63     ;                         Punctuator    10     18
+64     for                       Keyword       12     5
+65     (                         Punctuator    12     9
+66     int                       Keyword       12     10
+67     i                         Identifier    12     14
+68     =                         Operator      12     16
+69     0                         Integer       12     18
+70     ;                         Punctuator    12     19
+71     i                         Identifier    12     21
+72     <                         Operator      12     23
+73     3                         Integer       12     25
+74     ;                         Punctuator    12     26
+75     i                         Identifier    12     28
+76     ++                        Operator      12     29
+77     )                         Punctuator    12     31
+78     {                         Punctuator    12     33
+79     total                     Identifier    13     9
+80     +=                        Operator      13     15
+81     values                    Identifier    13     18
+82     [                         Punctuator    13     24
+83     i                         Identifier    13     25
+84     ]                         Punctuator    13     26
+85     ;                         Punctuator    13     27
+86     }                         Punctuator    14     5
+87     if                        Keyword       15     5
+88     (                         Punctuator    15     8
+89     total                     Identifier    15     9
+90     >=                        Operator      15     15
+91     10                        Integer       15     18
+92     &&                        Operator      15     21
+93     total                     Identifier    15     24
+94     !=                        Operator      15     30
+95     0                         Integer       15     33
+96     )                         Punctuator    15     34
+97     {                         Punctuator    15     36
+98     printf                    Identifier    16     9
+99     (                         Punctuator    16     15
+100    \"%s%.2f %c%c\"           String        16     16
+101    ,                         Punctuator    16     29
+102    message                   Identifier    16     31
+103    ,                         Punctuator    16     38
+104    total                     Identifier    16     40
+105    *                         Operator      16     46
+106    scale                     Identifier    16     48
+107    +                         Operator      16     54
+108    epsilon                   Identifier    16     56
+109    ,                         Punctuator    16     63
+110    grade                     Identifier    16     65
+111    ,                         Punctuator    16     70
+112    newline                   Identifier    16     72
+113    )                         Punctuator    16     79
+114    ;                         Punctuator    16     80
+115    }                         Punctuator    17     5
+116    return                    Keyword       18     5
+117    total                     Identifier    18     12
+118    >                         Operator      18     18
+119    (                         Punctuator    18     20
+120    int                       Keyword       18     21
+121    )                         Punctuator    18     24
+122    limit                     Identifier    18     25
+123    ?                         Operator      18     31
+124    0                         Integer       18     33
+125    :                         Operator      18     35
+126    1                         Integer       18     37
+127    ;                         Punctuator    18     38
+128    }                         Punctuator    19     1
+
+Token summary
+  Keyword       15
+  Identifier    29
+  Integer       12
+  Float         2
+  String        2
+  Character     2
+  Operator      23
+  Punctuator    43
+Total tokens: 128
+Lexical errors: 0

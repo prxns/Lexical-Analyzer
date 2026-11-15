@@ -58,3 +58,20 @@ jobs:
         with:
           name: sanitizer-results
           path: build/sanitizer-results.json
+  report:
+    name: Academic report export
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Export the editable master without installing dependencies
+        shell: pwsh
+        run: |
+          python tools/export_report.py --browser 'C:\Program Files\Google\Chrome\Application\chrome.exe'
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: academic-report
+          path: |
+            docs/Lexical_Analyzer_Report.pdf
+            tmp/report-render/layout-metrics.json
+            tmp/report-render/*.log

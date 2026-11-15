@@ -1,0 +1,11 @@
+{
+  "demo": {
+    "exit_status": 0,
+    "stderr": ""
+  },
+  "errors": {
+    "exit_status": 1,
+    "stderr": ""
+  },
+  "executable_sha256": "50121565a6632b05ab3349e86a377cafd168ecd3e07ea7ba071933d0224823ff"
+}
