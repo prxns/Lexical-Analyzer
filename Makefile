@@ -11,11 +11,16 @@ $(EXE): src/main.c src/lexer.c include/lexer.h
 	mkdir -p build
 	$(CC) $(CPPFLAGS) $(CFLAGS) src/main.c src/lexer.c -o $(EXE)
 
-test: $(EXE)
+build/test_analysis: tests/test_analysis.c src/analysis.c src/lexer.c include/analysis.h include/lexer.h
+	mkdir -p build
+	$(CC) $(CPPFLAGS) $(CFLAGS) tests/test_analysis.c src/analysis.c src/lexer.c -o build/test_analysis
+
+test: $(EXE) build/test_analysis
 	$(PYTHON) tests/test_lexer.py --exe $(EXE)
+	./build/test_analysis
 
 demo: $(EXE)
 	./$(EXE) samples/demo.c
 
 clean:
-	rm -f $(EXE)
+	rm -f $(EXE) build/test_analysis

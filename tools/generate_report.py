@@ -130,238 +130,258 @@ def make_flowchart():
     canvas.save(ROOT/'assets/scanner-flowchart.png')
 
 
+def make_desktop_flowchart():
+    canvas=Image.new('RGB',(1100,1130),'white')
+    draw=ImageDraw.Draw(canvas)
+    font=ImageFont.truetype('C:/Windows/Fonts/calibri.ttf',28)
+    navy='#233B59'
+    boxes=[(260,20,840,105,'Source editor and file actions'),
+           (260,155,840,240,'Capture UTF-8 snapshot and revision'),
+           (260,290,840,390,'Worker thread\nanalysis_scan calls the original lexer_next'),
+           (260,440,840,525,'Owned Token vector and real counts'),
+           (260,575,840,660,'Post WM_ANALYSIS_DONE to main thread'),
+           (260,710,840,810,'Revision still matches?\nReject cancelled or outdated results'),
+           (260,860,840,965,'Dashboard, token table and diagnostics\nSearch, navigate and export CSV')]
+    for x1,y1,x2,y2,label in boxes:
+        draw.rounded_rectangle((x1,y1,x2,y2),radius=12,fill='#EFF3F7',outline=navy,width=3)
+        bounds=draw.multiline_textbbox((0,0),label,font=font,align='center',spacing=4)
+        draw.multiline_text(((x1+x2-bounds[2])/2,(y1+y2-bounds[3])/2-2),label,font=font,fill=navy,align='center',spacing=4)
+    for previous,current in zip(boxes,boxes[1:]):
+        start,end=previous[3],current[1]
+        draw.line((550,start,550,end),fill=navy,width=3)
+        draw.polygon([(550,end),(542,end-13),(558,end-13)],fill=navy)
+    draw.line([(260,760),(125,760),(125,198),(260,198)],fill=navy,width=3)
+    draw.polygon([(260,198),(247,190),(247,206)],fill=navy)
+    draw.text((160,1010),'Editor changes invalidate results and request cancellation.',font=font,fill=navy)
+    canvas.save(ROOT/'assets/desktop-flowchart.png')
+
+
 def build():
-    evidence = json.loads((DOCS/'test-results-local.json').read_text())
-    assert evidence['successful'] and evidence['tests_run'] == 36 and len(evidence['passed']) == 36
-    for name in ['test-results-windows.json', 'verified-ubuntu-latest-gcc-results.json',
-                 'verified-ubuntu-latest-clang-results.json', 'sanitizer-results-results.json']:
-        result = json.loads((DOCS/name).read_text())
-        assert result['successful'] and result['tests_run'] == 36
-    summary = json.loads((DOCS/'demo-tokens.json').read_text())['summary']
-    executions = json.loads((DOCS/'execution-results.json').read_text())
-    assert executions['demo']['exit_status'] == 0 and executions['errors']['exit_status'] == 1
-    make_flowchart()
-
-    # Page 1
-    p('', after=240)
-    image('assets/dit-logo.png', 2.0, dark_panel=True)
-    p('DIT UNIVERSITY', 'University', 'center', after=360)
-    p('DESIGN AND IMPLEMENTATION\nOF A LEXICAL ANALYZER', 'Title', 'center', after=300)
-    p('Academic Project Report', 'Subtitle', 'center', after=180)
-    p('Subject  Compiler Design', align='center', after=540)
-    p('Submitted by', align='center', after=120)
-    p('Pranshu Rawat', 'Heading2', 'center', after=100)
-    p('SAP ID  1000021904\nSection  D', align='center', after=320)
-    p('B.Tech. Computer Science and Engineering', align='center', after=140)
-    p('Academic Year  2026–27', align='center', after=260)
-    p('Implementation language  C11', align='center')
-    page()
-
-    # Page 2
+    import hashlib
+    from PIL import Image
+    body.clear(); images.clear()
+    gui=json.loads((DOCS/'gui-test-results.json').read_text())
+    assert gui['successful'] and gui['tests_run']==len(gui['passed'])
+    assert hashlib.sha256((ROOT/'dist/LexicalAnalyzer.exe').read_bytes()).hexdigest()==gui['executable_sha256']
+    scanner=json.loads((DOCS/'test-results-windows.json').read_text())
+    assert scanner['successful'] and scanner['tests_run']==36
+    provenance=json.loads((DOCS/'gui-verification.json').read_text())
+    for name in ['gui-demo','gui-errors','gui-ready','gui-empty']:
+        with Image.open(DOCS/'screenshots'/f'{name}.png') as im:
+            im.verify()
+    with Image.open(DOCS/'screenshots/gui-demo.png') as im:
+        w,h=im.size
+        im.crop((int(w*.025),int(h*.215),int(w*.975),int(h*.332))).save(ROOT/'assets/dashboard-detail.png')
+        im.crop((int(w*.445),int(h*.35),int(w*.97),int(h*.73))).save(ROOT/'assets/token-table-detail.png')
+    with Image.open(DOCS/'screenshots/gui-errors.png') as im:
+        w,h=im.size
+        im.crop((int(w*.445),int(h*.735),int(w*.97),int(h*.92))).save(ROOT/'assets/diagnostics-detail.png')
+    make_desktop_flowchart()
+    # 1 Cover
+    p('',after=240); image('assets/dit-logo.png',2.0,dark_panel=True)
+    p('DIT UNIVERSITY','University','center',after=300)
+    p('DESIGN AND IMPLEMENTATION\nOF A LEXICAL ANALYZER','Title','center',after=240)
+    p('Native Windows Desktop Application','Subtitle','center',after=180)
+    p('Subject  Compiler Design',align='center',after=440)
+    p('Submitted by',align='center',after=100)
+    p('Pranshu Rawat','Heading2','center',after=100)
+    p('SAP ID  1000021904\nSection  D',align='center',after=240)
+    p('B.Tech. Computer Science and Engineering',align='center',after=100)
+    p('Academic Year  2026-27',align='center',after=160)
+    p('Implementation  C11 and the Windows API',align='center'); page()
+    # 2 Abstract and contents
     heading('Abstract')
-    p('This project implements a hand-written lexical analyzer in standard C11. It reads a source file and classifies keywords, identifiers, integer and floating constants, strings, characters, operators and punctuators. Each token is reported with its original lexeme and one-based source position. Comments and whitespace are skipped. Malformed literals and unsupported bytes produce diagnostic rows, allowing the scan to continue where recovery is possible.')
-    p(f'The implementation uses a dynamically grown input buffer and a small scanner state. It recognizes all 44 C11 keywords while deliberately limiting literal syntax and preprocessing. The demonstration produces {summary["total"]} valid tokens with no lexical errors. All 36 automated test methods passed on Windows GCC, Linux GCC and Linux Clang, and under AddressSanitizer and UndefinedBehaviorSanitizer. The downloaded Windows executable also passed the suite on the demonstration laptop.')
+    p('This project combines a hand-written C11 lexical analyzer with a native Windows desktop application. A source editor, token dashboard, searchable token table and diagnostics panel present the actual output of the existing C scanner. Source files can be opened, edited, saved and analyzed without a terminal. The packaged executable starts directly and requires no Python, Node.js, server or external GUI framework.')
+    p(f'The scanner remains the single source of truth. A portable C analysis model owns token spans, computes counts, filters results and exports CSV. A Win32 worker analyzes an editor snapshot while the window continues processing input; source revisions prevent stale results from replacing newer edits. The demonstration produces 128 valid tokens and no errors. All 36 scanner tests, the C analysis integration executable and {gui["tests_run"]} native desktop workflow tests passed in the recorded verification run.')
     sub('Table of Contents')
-    contents = [('1 Introduction',3),('2 Problem Statement',3),('3 Objectives',3),('4 Scope',3),
-        ('5 Theoretical Background',4),('6 System Requirements',4),('7 System Design',5),
-        ('8 Algorithm and Working',6),('9 Implementation Details',6),('10 Results and Execution',7),
-        ('11 Testing',9),('12 Complexity Analysis',11),('13 Limitations',11),
-        ('14 Conclusion',12),('15 References',12),('16 Appendix',12)]
-    table(['Section','Page'], contents, [7900,1126], font=20)
+    table(['Section','Page'],[
+        ('1 Introduction and Problem Statement',3),('2 Objectives and Scope',3),
+        ('3 Theory and System Requirements',4),('4 System Architecture',5),
+        ('5 Interface and Application Workflow',6),('6 Actual Application Overview',7),
+        ('7 Dashboard and Token Explorer',8),('8 Error Diagnostics',9),
+        ('9 Algorithm and Implementation',10),('10 Scanner and Model Testing',11),
+        ('11 Native Desktop Testing',12),('12 Complexity and Limitations',13),
+        ('13 Conclusion',14),('14 References and Appendix',14)], [7900,1126],font=20)
     page()
-
-    # Page 3
-    heading('1 Introduction')
-    p('A compiler translates a source program into another representation through several stages. Lexical analysis is the stage that groups source characters into recognizable units. For example, the statement int total = 10; contains a keyword, an identifier, an operator, an integer constant and a punctuator. Later compiler stages reason about the arrangement and meaning of those tokens. This project implements only their recognition [1, Section 6.4].')
-    p('The application accepts a source filename in a terminal and displays a token table followed by counts for each category. This makes the scanner suitable for a Compiler Design practical demonstration: the input, classification and position of each lexeme can be inspected directly. The source is analyzed as text and is never compiled or executed by the analyzer.')
-    heading('2 Problem Statement')
-    p('Source characters alone do not reveal the lexical role of a word or symbol. The scanner must distinguish a reserved keyword from a similarly named identifier, combine multi-character operators correctly and avoid treating comment contents as ordinary program tokens. Invalid input must be identified without corrupting source positions or overrunning buffers.')
-    heading('3 Objectives')
+    # 3 Purpose
+    heading('1 Introduction and Problem Statement')
+    p('Lexical analysis groups source characters into meaningful units before later compiler stages consider their arrangement or meaning. For example, int total = 10; contains a keyword, identifier, operator, integer and punctuator. The scanner must distinguish reserved words from similar identifiers, recognize multi-character operators and avoid treating comments as ordinary program tokens [1].')
+    p('The original project exposed this behavior through a command-line program. The desktop upgrade preserves that implementation and adds a practical demonstration workflow: the user can see the source, its token stream, category totals and error locations in one window. The interface must display genuine scanner results and remain usable while scanning larger inputs.')
+    heading('2 Objectives and Scope')
     p(OBJECTIVE)
-    p('The supporting objectives are to apply longest-match recognition, preserve source positions, report recoverable lexical errors clearly and provide reproducible evidence of correct behavior through automated tests and sample executions.')
-    heading('4 Scope')
-    p('The implemented subset includes ASCII identifiers, the C11 keyword set, common integer and decimal floating forms, ordinary strings and single-character constants, C operators, punctuators and digraphs. Whitespace and both forms of C comments are skipped. Preprocessor markers are tokenized but directives are not evaluated. The project does not perform parsing, semantic analysis, code generation or symbol-table construction.')
+    p('Supporting objectives are to provide a clear native interface, preserve source positions, explain lexical errors, support searchable results and CSV export, and verify that the graphical and command-line applications use the same scanner.')
+    sub('Implemented scope')
+    p('The lexical subset includes all 44 C11 keywords, ASCII identifiers, common integer and decimal floating forms, ordinary strings and single-character constants, C operators, punctuators and digraphs. Whitespace and both C comment forms are skipped. Invalid or unsupported lexical input produces diagnostics at its opening position. The project does not parse syntax, resolve identifiers, evaluate macros or generate executable code.')
+    p('The desktop layer supports UTF-8 text files and Unicode Windows filenames, but the lexical rules remain the documented ASCII subset. The editor removes a UTF-8 BOM when opening a text file and normalizes its snapshot to CRLF. This behavior does not alter the portable CLI scanner, which continues to analyze its input bytes directly.')
     page()
-
-    # Page 4
-    heading('5 Theoretical Background')
-    table(['Term','Meaning in this implementation'], [
-        ('Compiler','A translator that processes a source language; lexical analysis is one stage.'),
-        ('Lexical analyzer','A scanner that partitions input into tokens and diagnoses invalid lexical forms.'),
-        ('Token','A category and source span; for example, Integer at line 2, column 13.'),
-        ('Lexeme','The actual source characters belonging to a token, such as 0x2A.'),
-        ('Pattern','A rule describing a token family, such as [A-Za-z_][A-Za-z_0-9]*.'),
-        ('Keyword','A reserved word such as int or _Atomic, recognized by exact comparison.'),
-        ('Identifier','A user-defined name such as total; identifiers are case-sensitive.'),
-        ('Constant or literal','A numeric, quoted string or character form recognized by the scanner.'),
-        ('Operator','A symbol such as +, >= or >>=; its use is not semantically evaluated.'),
-        ('Punctuator','A structural or preprocessing symbol such as ;, {, ... or ##.')
-    ], [2200,6826], font=21)
-    sub('Symbol recognition and maximal munch')
-    p('The scanner tests multi-character symbols before their shorter prefixes. Thus >>= is one Operator, rather than >> followed by =. Keyword recognition occurs after the complete identifier span has been read, so integer is an Identifier even though it begins with int. Numeric scanning collects a candidate before validation; 123abc is diagnosed as one malformed candidate rather than two apparently valid tokens. These choices make token boundaries explicit [1, Sections 6.4 and 6.4.8].')
-    heading('6 System Requirements')
-    p('The application needs an operating system capable of running its compiled executable. Rebuilding requires a C11-compatible compiler and the standard C library. Automated testing requires Python 3, using only its standard library. No minimum CPU speed or memory capacity is claimed; memory use grows with source size. VS Code is an optional editor and does not itself provide GCC.')
-    p('Verification used GitHub-hosted Windows GCC 15.2.0 and Linux GCC/Clang builds. The prebuilt Windows executable was then exercised locally. No local C compiler was found during inspection; rebuilding on this laptop therefore requires a separately configured toolchain. The application itself runs without Python or a compiler.')
+    # 4 Theory and requirements
+    heading('3 Theory and System Requirements')
+    table(['Concept','Meaning and example'],[
+        ('Token and lexeme','A token has a category and source span; its lexeme is the original text, such as 0x2A.'),
+        ('Pattern','A recognition rule; ASCII identifiers follow [A-Za-z_][A-Za-z_0-9]*.'),
+        ('Keyword','A reserved word such as int or _Atomic, matched after the entire identifier has been read.'),
+        ('Constants','Integer, float, string and character categories; the dashboard combines these four counts.'),
+        ('Operators','Symbols such as >=, >>= and ++, matched longest first.'),
+        ('Punctuators','Structural and preprocessing symbols, including braces, semicolons, dots, # and ##.'),
+        ('Maximal munch','Prefer the longest recognized span; >>= is one operator rather than >> followed by =.')
+    ],[2200,6826],font=21)
+    sub('Running the application')
+    p('The distribution targets Windows 10 version 1703 or newer and Windows 11 on x64. Double-click dist/LexicalAnalyzer.exe; keep its samples subfolder beside it. The executable uses only Windows system libraries, RichEdit and common controls. It has the Windows GUI subsystem and does not display a console. No compiler, Python, Node.js or server is needed to demonstrate it.')
+    sub('Development and verification')
+    p('Rebuilding requires a C11-capable MinGW GCC toolchain and windres. The automated runner uses Python 3 standard-library modules; the actual scanner and interface are written in C. GUI tests require Windows. Portable scanner and analysis-model checks also run on Linux with GCC and Clang. Report authoring uses local Python/Pillow tooling; those tools are not application dependencies.')
+    p('No minimum CPU speed or installed RAM specification is claimed. Desktop input is limited to 4 MiB and 500,000 result rows to bound editor and table storage. The preserved CLI remains available for larger inputs. Fonts and geometry scale with window DPI; resizing was exercised by the native integration suite. Multi-monitor hardware combinations are not claimed as exhaustively tested.')
     page()
-
-    # Page 5
-    heading('7 System Design')
-    p('The command-line layer owns the source buffer, output and category counters. The scanner reads that buffer through a Lexer state and returns one borrowed Token span at a time. This keeps lexical recognition independent of table and JSON formatting. The input remains alive until all tokens have been processed.')
-    image('assets/scanner-flowchart.png', 4.65)
-    p('Figure 1  Actual scanner and output workflow', 'Caption', 'center')
-    p('A lexical error returns TOKEN_ERROR with the opening position and a message. EOF ends the loop; the CLI prints the summary, frees the input and returns the appropriate status. Allocation, file and output failures are handled separately as execution errors.')
+    # 5 Architecture
+    heading('4 System Architecture')
+    p('The GUI does not contain a second tokenizer. Both applications link src/lexer.c. The desktop adds a portable result model and a Win32 presentation layer. Tokens borrow spans from the analysis model\'s owned source buffer; that buffer remains alive while results are displayed.')
+    image('assets/desktop-flowchart.png',4.65)
+    p('Figure 1  Actual desktop analysis and revision-check workflow','Caption','center')
+    p('The worker never modifies controls. It posts a completion message containing an owned result. The main thread accepts it only if the editor revision still matches. An edit requests cancellation and clears displayed results. Closing waits asynchronously for an active worker to release its snapshot, rather than blocking the message loop.')
     page()
-
-    # Page 6
-    heading('8 Algorithm and Working')
-    p('1. Validate the invocation, open the file in binary mode and read it into a growing buffer. Check allocation, read and close results.\n2. Initialize the byte offset, line and column.\n3. Skip whitespace and comments, retaining an error for an unterminated block comment.\n4. At EOF, stop; otherwise record the next opening position.\n5. Scan an identifier and perform exact keyword lookup, validate a numeric candidate, scan a quoted literal, or match a symbol longest first.\n6. Return a token or diagnostic. Print it and update counts, then request the next token.\n7. Print the summary, release the buffer and return status 0, 1 or 2.')
-    sub('Pseudocode')
-    code('''source = read_source(path)
-lexer_init(source)
-while true:
-    token = lexer_next()
-    if token.kind == TOKEN_EOF: break
-    print token and source position
-    if token.kind == TOKEN_ERROR: increment errors
-    else: increment category count
-print summary
-free source
-return errors ? 1 : 0''')
-    heading('9 Implementation Details')
-    table(['Function or type','Actual responsibility'], [
-        ('Lexer and Token','Size-based offsets and positions; a borrowed lexeme pointer and length.'),
-        ('read_source','fread with malloc/realloc; allocation growth checked against SIZE_MAX.'),
-        ('advance and peek','Bounded lookahead and CRLF-aware source position updates.'),
-        ('is_keyword','Exact length and byte comparison against 44 reserved words.'),
-        ('scan_number and number_kind','Candidate extraction, base/exponent checks and suffix validation.'),
-        ('scan_literal','Quote matching, escape checks, character length checks and recovery.'),
-        ('lexer_next','Whitespace/comments, category dispatch and ordered symbol recognition.'),
-        ('print_escaped','Visible control-byte escaping for safe table and valid JSON output.')
-    ], [3200,5826], font=20)
-    p('Tabs count as one column. A CRLF pair advances one line; CR and LF alone also start new lines. Invalid bytes consume one byte. A quoted literal stops at its closing delimiter, newline or EOF. Numeric magnitude and escape values are not converted, so range or type errors remain outside lexical analysis.')
+    # 6 Interface explanation
+    heading('5 Interface and Application Workflow')
+    table(['Area or action','Implemented behavior'],[
+        ('Header','Application name, C Source Code Analysis description, source filename and current status.'),
+        ('Source editor','RichEdit with Consolas, line numbers, multiline text, scrolling, undo and selection.'),
+        ('Open and Save','Native file dialogs; UTF-8 saves use a temporary file and replace the destination after a successful write.'),
+        ('Sample buttons','Load the packaged copies of demo.c and errors.c. Save asks for a new filename for a sample copy.'),
+        ('Analyze Code','Captures editor text, starts a native worker and changes to Cancel Analysis while work is active.'),
+        ('Summary cards','Display actual valid-token, keyword, identifier, constant, operator, punctuator and error counts.'),
+        ('Token explorer','Virtual list view with stable token numbers, exact lexemes, categories, lines and columns.'),
+        ('Search and category','Case-insensitive ASCII search intersects the selected category without changing overall counts.'),
+        ('Diagnostics','Separate error rows with line/column, message and lexeme; success text when the error count is zero.'),
+        ('Navigation','Double-clicking a token or error selects its original source span in the editor.'),
+        ('Export Results','Writes all result rows and diagnostic messages to CSV, regardless of the active view filter.'),
+        ('Clear controls','Clear Results retains source; Clear Editor asks about unsaved edits before replacing text.')
+    ],[2550,6476],font=20)
+    sub('Demonstration sequence')
+    p('1. Double-click LexicalAnalyzer.exe.\n2. Load Sample or open a C file.\n3. Click Analyze Code, or press Ctrl+Enter.\n4. Inspect counts and tokens, then search or filter.\n5. Open Error Sample to demonstrate diagnostics and source navigation.\n6. Export the completed analysis as CSV.')
+    p('Ctrl+O opens a file, Ctrl+S saves, Ctrl+F focuses token search and Ctrl+E exports. Tab inserts a tab inside the source editor. Unsaved-change prompts provide Save, Discard and Cancel choices.')
     page()
-
-    # Page 7
-    heading('10 Results and Execution')
-    p('The following source is the actual demonstration input. It covers all eight valid token categories in a short array-accumulation program. Preprocessor text is tokenized without resolving the include directive.')
-    code((ROOT/'samples/demo.c').read_text())
-    sub('Successful execution excerpt')
-    demo = (DOCS/'demo-output.txt').read_text().splitlines()
-    code('\n'.join(demo[:14]))
-    p('Transcript excerpt from dist/lexical_analyzer.exe samples/demo.c. The complete 128-token table is supplied in docs/demo-output.txt and the structured equivalent in docs/demo-tokens.json.', 'Caption')
-    table(['Keyword','Identifier','Integer','Float','String','Character','Operator','Punctuator'],
-          [[str(summary[k]) for k in ['Keyword','Identifier','Integer','Float','String','Character','Operator','Punctuator']]],
-          [1100,1250,1000,850,900,1250,1200,1476], font=18)
-    p('Total tokens: 128. Lexical errors: 0. Actual exit status: 0.')
+    # 7 Native overview screenshot
+    heading('6 Actual Application Overview')
+    p('Figure 2 is a genuine Windows capture of the compiled desktop application after analyzing the valid sample. It was taken by the native integration test process using Windows PrintWindow; the displayed values come from the C scanner, not a visual mockup.')
+    image('docs/screenshots/gui-demo.png',6.2)
+    p('Figure 2  Running application with the successful demonstration analysis','Caption','center')
+    p('The source editor and result explorer share one window. Category colors provide restrained emphasis, while the dashboard distinguishes a completed analysis from the initial state. Before a scan the cards display a dash; analyzing empty input produces actual zero counts. This avoids presenting invented statistics in an empty view.')
+    p('The native executable was launched as a child application with its real packaged files during verification. The test suite reads visible control values and compares their totals with JSON produced by the existing CLI. The captured executable hash and CI run are retained with the verification evidence.')
     page()
-
-    # Page 8
-    heading('10 Lexical Error Demonstration')
-    sub('Lexical error demonstration')
-    p('The second input deliberately contains invalid octal digits, an incomplete exponent, an invalid escape, an unclosed string, an unsupported character and an unclosed block comment. The scanner returns six diagnostic rows while preserving the positions of the valid tokens around them.')
-    code((ROOT/'samples/errors.c').read_text())
-    sub('Genuine execution transcript')
-    error_lines = (DOCS/'errors-output.txt').read_text().splitlines()
-    # Diagnostic rows are preserved verbatim, apart from line wrapping.
-    code('\n'.join([error_lines[0],error_lines[1],error_lines[3]] + [line for line in error_lines if 'Error ' in line] + error_lines[-12:]), width=92)
-    p('Only diagnostic rows and the summary are shown above; long rows are wrapped for readability. Complete output, including valid rows, is in docs/errors-output.txt. Actual exit status: 1.', 'Caption')
-    sub('Recovery and interpretation')
-    p('A malformed number is consumed as one candidate. An invalid escape marks its entire quoted literal as an Error. An unclosed quoted literal stops before the newline, allowing the next line to be analyzed. The unclosed block comment consumes the remaining input and produces one final diagnostic. Messages identify the opening position of the affected span.')
-    p('The first error begins at line 2, column 13; the unterminated block comment begins at line 7, column 1. An empty file instead returns status 0 with all counts zero. A missing file or incorrect invocation returns status 2 with an explanatory message on standard error.')
+    # 8 Enlarged genuine UI panels
+    heading('7 Dashboard and Token Explorer')
+    image('assets/dashboard-detail.png',6.2)
+    p('Figure 3  Enlarged dashboard crop from the unmodified application capture','Caption','center')
+    table(['Metric','Actual valid sample result'],[
+        ('Valid tokens',128),('Keywords',15),('Identifiers',29),('Constants',18),('Operators',23),('Separators / punctuators',43),('Lexical errors',0)
+    ],[5000,4026],font=20)
+    image('assets/token-table-detail.png',6.2)
+    p('Figure 4  Enlarged token explorer crop from the same running application','Caption','center')
+    p('The constants total is the sum of 12 integers, 2 floats, 2 strings and 2 characters. Error rows are counted separately from valid tokens. Table numbering follows scanner order and remains stable when a filter hides other rows. Native list views supply selection, scrolling and resizable columns; long lexemes retain their full source span and are exported without the visible cell-width restriction.')
     page()
-
-    cases = [
-        ('All C11 keywords','44 exact keyword matches','44 Keyword rows'),
-        ('Identifier boundaries','Case-sensitive full names','All names matched'),
-        ('Integer forms','Decimal, octal, hex, suffixes','All forms matched'),
-        ('Floating forms','Fractions, exponents, suffixes','All forms matched'),
-        ('String escapes','Valid strings and escapes','Exact lexemes matched'),
-        ('Character escapes','One character or escape','Exact lexemes matched'),
-        ('All operators','One expected token per operator','All operators matched'),
-        ('Adjacent operators','Longest matching symbols','Exact sequence matched'),
-        ('Punctuators and digraphs','Correct punctuator category','All symbols matched'),
-        ('Whitespace and comments','Skip all trivia','Only 3 program tokens'),
-        ('Markers inside literals','Preserve literal contents','Both literals matched'),
-        ('Multiline positions','Exact line and column values','7 positions matched'),
-        ('CRLF, CR and LF','Each newline convention','Lines 1 through 4'),
-        ('Empty source','No tokens and no errors','Zero counts'),
-        ('Whitespace only','No tokens and no errors','Zero counts'),
-        ('Comment only and EOF','No ordinary tokens','Zero tokens'),
-        ('Invalid bytes and NUL','Five errors at columns 1–5','5 errors'),
-        ('Unterminated strings','Diagnostic at opening quote','Expected messages'),
-        ('Unterminated character','Character diagnostic','Expected message'),
-        ('Unterminated comment','Error at line 2 column 2','Position matched'),
-        ('Malformed numerics','Reject entire candidates','All cases rejected'),
-        ('Invalid escape forms','Error for each bad literal','All cases rejected'),
-        ('Character lengths','Reject empty or multi-unit','One error per input'),
-        ('Encoded literal prefixes','Explicit subset diagnostic','Whole spans rejected'),
-        ('Error recovery','Resume on following lines','2 errors, later tokens'),
-        ('Single symbols at EOF','No lost final token','All final tokens read'),
-        ('Large lexemes','Preserve 100,000-byte name','Full lexemes retained'),
-        ('Large source','5,000 repeated source lines','25,000 tokens'),
-        ('Valid demo fixture','Every valid category present','128 tokens, 0 errors'),
-        ('Error fixture','Six intentional errors','6 errors'),
-        ('CLI and missing file','Status 2 and stderr; help 0','Statuses matched'),
-        ('Default table output','Table, summary and success','Output markers found'),
-        ('120 random byte inputs','Terminate; ordered positions','All trials completed'),
-        ('Preprocessor markers','No directive evaluation','Exact token sequence'),
-        ('Raw NUL in literal','Reject entire literal','1 error'),
-        ('Leading signs','Separate operator tokens','4 expected tokens')
-    ]
-    # Pages 9 and 10
-    for block in range(2):
-        heading('11 Testing' + (' Continued' if block else ''))
-        if block == 0:
-            p('The Python standard-library runner executes the C binary as a subprocess. Assertions compare exact lexemes, categories, positions, summaries and exit codes. Every case below was executed successfully; subcases are included within the 36 test methods.')
-        else:
-            p('The remaining cases exercise error recovery, boundaries, larger inputs and command-line behavior. The random-input check uses a fixed seed, making failures reproducible; it verifies termination and ordered nonempty spans rather than full C conformance.')
-        rows = [[f'T{i+1:02}', *cases[i], 'Pass'] for i in range(block*18, (block+1)*18)]
-        table(['ID','Input or condition','Expected result','Actual result','Status'], rows,
-              [580,2350,2750,2676,670], font=18)
-        if block == 0:
-            p('Table 1  Executed regression cases T01 to T18', 'Caption')
-        else:
-            p('Table 2  Executed regression cases T19 to T36', 'Caption')
-            sub('Build and memory checks')
-            p('Strict builds used -std=c11 -Wall -Wextra -Wpedantic -Werror -O2 and completed without warnings. All 36 tests passed in each Windows GCC, Linux GCC and Linux Clang job. A separate Clang job ran the same suite with -fsanitize=address,undefined and reported no sanitizer failure. The Windows binary also passed all 36 tests locally. These checks cover exercised paths; they are not a proof that every possible input is defect-free.')
-        page()
-
-    # Page 11
-    heading('12 Complexity Analysis')
-    p('Let n be the number of input bytes. File loading grows its buffer geometrically, giving O(n) total copying and O(n) memory. The scan moves forward without rewinding. Keyword lookup examines a fixed set of 44 words and symbol matching examines a fixed table of short symbols. Numeric validation may reread its own candidate once; each candidate is disjoint. Total scanning time is therefore O(n) for this fixed language subset.')
-    p('Printing is proportional to the number of bytes emitted. With an explicit output-size variable m, total processing is O(n + m); escaped bytes may occupy several display characters. The scanner uses O(1) auxiliary state and borrowed token spans. The CLI retains the full source, so application working memory is O(n). Tokens are printed as they are returned; an O(n) token collection is not retained by the application. The Python test runner intentionally does collect JSON results for assertions.')
-    heading('13 Limitations')
-    p('The program is a documented lexical subset rather than a standards-conforming C front end. Identifiers are limited to ASCII letters, digits and underscores. Non-ASCII bytes, a UTF-8 byte-order mark and NUL are unsupported outside comments. Comments are opaque byte sequences and block comments do not nest.')
-    p('Integer syntax supports decimal, octal and hexadecimal forms with common U and L suffixes. Floating syntax is decimal, with fractions or exponents and an optional floating suffix. Hexadecimal floating forms, binary literals, C23 separators and numeric range checking are excluded. A leading sign remains an Operator.')
-    p('Only ordinary strings and character constants are supported. A character constant must contain exactly one character or escape. Common simple escapes, up to three octal digits and nonempty hexadecimal escapes are recognized syntactically; their values are not converted or range-checked. Wide and encoded prefixes and universal character names are diagnosed. Adjacent strings are not concatenated.')
-    p('Preprocessing is not performed. The symbols # and ## and digraph equivalents are returned as Punctuator tokens. Header names receive no special category, and include files are not opened. Trigraph translation and backslash-newline splicing are excluded. These decisions are documented so that tokenization is not confused with the full C translation phases [1, Section 5.1.1.2].')
-    p('Diagnostics report the opening location of a bad span, with one primary message per literal. After malformed quotes, later delimiters may cause additional diagnostic rows. The scanner does not check balanced delimiters, declaration validity, identifier meaning or type compatibility. Such checks belong to subsequent compiler stages.')
+    # 9 Error screenshot
+    heading('8 Error Diagnostics')
+    p('The intentional-error sample produces 16 valid tokens and six diagnostic rows. It demonstrates invalid octal digits, an incomplete exponent, an invalid escape, an unclosed string, an unsupported character and an unclosed block comment.')
+    image('docs/screenshots/gui-errors.png',6.2)
+    p('Figure 5  Actual native application after analyzing the error sample','Caption','center')
+    image('assets/diagnostics-detail.png',6.2)
+    p('Figure 6  Enlarged diagnostics crop; the complete list scrolls independently','Caption','center')
+    p('Each diagnostic retains the opening line and column and the relevant lexeme. The first malformed number begins at line 2, column 13. Double-clicking a row locates its source span. Newline-terminated quoted literals recover at the newline; an unterminated block comment consumes the remaining input and reports its opening position.')
     page()
-
-    # Page 12
-    heading('14 Conclusion')
-    p('The project meets its token-identification objective with a readable C11 implementation and a direct terminal interface. The valid demonstration produces 128 tokens across all eight supported categories; the invalid demonstration produces six lexical diagnostics at the expected source positions. The program is organized into a scanner module and a command-line layer, with no runtime framework or scanner generator.')
-    p('Correctness was checked through 36 automated methods across three compiler/platform builds, a sanitizer build and local Windows execution. The report, README and saved transcripts describe the implemented behavior and its boundaries. The remaining local setup requirement for rebuilding is a working C compiler; the supplied verified Windows executable can be demonstrated directly.')
-    heading('15 References')
-    p('[1] ISO/IEC JTC1/SC22/WG14. N1570 Committee Draft, Programming languages — C, 12 April 2011. Sections 5.1.1.2 and 6.4.1–6.4.9. https://www.open-std.org/jtc1/sc22/wg14/www/docs/n1570.pdf', size=21)
-    p('[2] DIT University. Official media kit, Logos, and linked dit_main.webp asset. Accessed 15 November 2026. https://www.dituniversity.edu.in/media-kits/logo', size=21)
-    p('[3] Lexical Analyzer project repository. Implementation and reproducible checks. https://github.com/prxns/Lexical-Analyzer', size=21)
-    heading('16 Appendix')
-    sub('Demonstration and test commands')
-    code('''dist\\lexical_analyzer.exe samples\\demo.c
-dist\\lexical_analyzer.exe samples\\errors.c
-python tests/test_lexer.py --exe dist/lexical_analyzer.exe
-build.bat
-run_demo.bat''')
-    sub('Token data structure excerpt')
-    code('''typedef struct {
-    TokenKind kind;
-    const unsigned char *lexeme;
-    size_t length, line, column;
-    const char *message;
-} Token;''')
-    p('Evidence provenance: GitHub Actions run 43725899657 tested source commit eed408193de72970187dc0423cca1973d3b046a7. JSON test records and full transcripts are supplied in docs/. The Windows executable SHA-256 is recorded in docs/execution-results.json.', size=20)
-
+    # 10 Real algorithm and implementation
+    heading('9 Algorithm and Implementation')
+    code('\n'.join([
+        'on Analyze Code:', '    snapshot = editor_source(); revision = source_revision',
+        '    start scan_thread(snapshot, revision)', 'worker:',
+        '    analysis_scan -> lexer_init -> repeated lexer_next',
+        '    store each real Token; accumulate category counts',
+        '    post WM_ANALYSIS_DONE with owned result', 'main thread:',
+        '    reject cancelled or outdated revisions',
+        '    populate statistics, token rows and diagnostics',
+        '    keep processing resize, editor and control messages']))
+    table(['Source function or structure','Actual responsibility'],[
+        ('Lexer, Token, lexer_next','Original portable scanner state and borrowed lexeme spans; unchanged by the GUI upgrade.'),
+        ('Analysis and analysis_scan','Own a source copy and grow the token vector safely; retain counts and diagnostic tokens.'),
+        ('analysis_filter','Category matching and KMP substring search; produces indices rather than duplicated tokens.'),
+        ('analysis_export_csv','Writes complete token rows with quote escaping and diagnostic messages.'),
+        ('begin_analysis and scan_thread','Capture editor UTF-8, start CreateThread and post completion to the window.'),
+        ('analysis_finished','Check source revision/cancellation, transfer ownership and refresh the real result views.'),
+        ('display_item and jump_to_token','Provide virtual-table text and convert source byte spans to editor selection indices.'),
+        ('load_source and save_source','Validate text-file input and save source through a checked temporary-file replacement.'),
+        ('window_proc and layout_window','Route native messages, draw the dark interface, resize controls and handle DPI changes.')
+    ],[3400,5626],font=20)
+    p('The scanner still applies longest-match recognition and exact keyword lookup. Whitespace/comment skipping, numeric validation, escapes and source positions remain in src/lexer.c. No lexical rule is duplicated in the interface or Python test harness.')
+    page()
+    # 11 Existing tests and model tests
+    heading('10 Scanner and Model Testing')
+    p('The original 36 regression methods remain intact. They passed on Windows GCC, Linux GCC and Linux Clang. The same scanner suite and the new analysis-model executable also passed under AddressSanitizer and UndefinedBehaviorSanitizer. Strict compilation uses -std=c11 -Wall -Wextra -Wpedantic -Werror.')
+    table(['Cases','Test condition','Expected and actual outcome','Status'],[
+        ('T01-T02','44 keywords and identifier boundaries','Exact categories and lexemes matched','Pass'),
+        ('T03-T06','Integer, float, string and character forms','Supported literals recognized exactly','Pass'),
+        ('T07-T09','Operators, longest match and punctuators','Expected full token sequence matched','Pass'),
+        ('T10-T13','Comments, lines, columns and newline forms','Trivia skipped and positions matched','Pass'),
+        ('T14-T16','Empty source, whitespace and comments only','Zero ordinary tokens and no errors','Pass'),
+        ('T17-T24','Invalid bytes, malformed/unsupported literals','Expected errors and opening positions','Pass'),
+        ('T25-T26','Recovery and individual symbols at EOF','Later and final tokens retained','Pass'),
+        ('T27-T28','Long lexemes and 5,000 source lines','Full spans and 25,000 tokens retained','Pass'),
+        ('T29-T32','Samples and command-line behavior','Expected counts, output and exit codes','Pass'),
+        ('T33-T36','120 random inputs and remaining edge cases','Termination and asserted invariants held','Pass'),
+        ('Model','Counts, filter groups and search intersection','Matched actual C Token data','Pass'),
+        ('Model','CSV quotes, cancellation and empty input','Correct output and safe retained ownership','Pass'),
+        ('Model','Long repetitive identifier and bounded display','Search matched; original span retained','Pass')
+    ],[1200,3000,4000,826],font=19)
+    p('The portable C model test does not replace the scanner tests. It checks the additional bridge used by the desktop: source/result ownership, category aggregates, constant grouping, view indices, safe printable lexeme formatting and complete CSV output. Cancelled analysis leaves a caller\'s previous model intact, and freeing an initialized model twice is safe.')
+    p('Random-input testing and sanitizers cover exercised paths; they are not proof of full C conformance or the absence of every possible defect. Full machine-readable results and genuine execution transcripts are supplied in docs/.')
+    page()
+    # 12 Real GUI integration results
+    heading('11 Native Desktop Testing')
+    p(f'All {gui["tests_run"]} native workflow tests passed using the actual packaged executable. The test harness starts its own child process and targets only windows belonging to that process. Expected token aggregates come from the real CLI; there is no Python tokenizer or simulated dashboard.')
+    descriptions=[
+        ('Launch and controls','Windows GUI subsystem; all controls present'),
+        ('Valid sample','128 tokens, zero errors; values match CLI'),
+        ('Load Sample button','Packaged demo is loaded and analyzed'),
+        ('Error Sample button','16 valid tokens and six diagnostics'),
+        ('Search and category','Case-insensitive intersection; totals unchanged'),
+        ('Clear Results','Rows removed; editor source retained'),
+        ('Clear Editor and empty input','Empty analysis gives actual zero counts'),
+        ('Save File','Changed UTF-8 source saved and reanalyzed'),
+        ('Open File dialog','Selected file opened through the native dialog'),
+        ('Export Results dialog','CSV contains all actual token rows'),
+        ('Edits during analysis','No stale old-source result survives an edit'),
+        ('Cancel and resize','Cancellation completes; window remains usable'),
+        ('Double-click navigation','The token source span is selected')]
+    rows=[]
+    for i,name in enumerate(gui['passed']):
+        description=descriptions[i] if i<len(descriptions) else ('Additional input check',name)
+        rows.append((f'G{i+1:02}',description[0],description[1],'As expected','Pass'))
+    table(['ID','Action','Expected result','Actual','Status'],rows,[600,2300,3900,1450,776],font=18)
+    sub('Distribution validation')
+    p('The package check reads the actual PE header and import table. It verifies the Windows x64 GUI subsystem, per-monitor DPI manifest, standard system-library dependencies, both packaged samples and the preserved CLI. The native workflow suite launches the distribution executable itself. The application does not require a Python interpreter or development environment at runtime.')
+    p(f'Evidence source: GitHub Actions run {provenance["run_id"]}. Screenshot capture and GUI test records include the executable SHA-256. These are executed outcomes; no terminal or application screenshots have been manufactured.')
+    page()
+    # 13 Complexity and limits
+    heading('12 Complexity and Limitations')
+    p('Let n be source length and t the number of returned rows. The scanner advances through input in O(n) time for the fixed keyword/symbol tables. The desktop model retains the source and token vector, requiring O(n + t) storage. Growth is geometric. The CLI still streams returned tokens while retaining its source buffer, so its own working memory remains O(n).')
+    p('Filtering scans candidate token spans with a bounded query and KMP prefix table. Its work is linear in the searched lexeme bytes plus query preparation, while its index array uses O(t) space. The virtual table requests visible text rather than creating a child control for every token. CSV export is proportional to the output size and does not depend on the active filter.')
+    p('The desktop limit is 4 MiB of UTF-8 source and 500,000 result rows. Allocation, encoding, I/O and limit failures are reported. Cancellation is checked between scanner calls; a single long lexeme is completed before the next check. File opening and saving are synchronous, bounded text-file operations; lexical analysis itself runs in the worker.')
+    p('The lexical subset excludes universal character names, wide/encoded literals, hexadecimal floats, binary integers and C23 digit separators. Character constants must contain one character or supported escape. Numeric magnitudes and escape values are not evaluated or range-checked. Adjacent strings remain separate tokens.')
+    p('Preprocessor markers are punctuators. Macro expansion, conditional preprocessing, header-name recognition, trigraph translation and backslash-newline splicing are not implemented. Block comments do not nest. The scanner does not validate syntax, declarations, types, balanced delimiters or program meaning.')
+    p('Windows supplies the native file dialogs, caption and scrolling infrastructure. Exact system chrome can vary across Windows versions. Per-monitor DPI support is implemented in the manifest and resize path; verification does not claim exhaustive testing across every monitor, display scale or accessibility configuration. The portable CLI remains the cross-platform interface.')
+    page()
+    # 14 Conclusion, references and appendix
+    heading('13 Conclusion')
+    p('The project now provides a complete native desktop workflow while retaining its original C scanner and command-line application. The editor, dashboard, token explorer, diagnostics, filtering, navigation and CSV export operate on real C analysis results. The packaged application launches directly and does not require manual setup of a server or language runtime.')
+    p(f'Verification includes the original 36 scanner methods, shared C model integration checks, {gui["tests_run"]} Windows desktop workflow tests, strict compiler builds, sanitizers and distribution validation. Genuine captures document successful and erroneous source analysis. The implementation remains a lexical analyzer with explicit, documented language boundaries.')
+    heading('14 References and Appendix')
+    p('[1] WG14. N1570 Committee Draft, Programming languages - C, 12 April 2011, Sections 5.1.1.2 and 6.4.1-6.4.9. https://www.open-std.org/jtc1/sc22/wg14/www/docs/n1570.pdf',size=20)
+    p('[2] Microsoft Learn. About List-View Controls; Creating Threads; High DPI Desktop Application Development on Windows. https://learn.microsoft.com/en-us/windows/win32/controls/list-view-controls-overview ; https://learn.microsoft.com/en-us/windows/win32/procthread/creating-threads ; https://learn.microsoft.com/en-us/windows/win32/hidpi/high-dpi-desktop-application-development-on-windows',size=20)
+    p('[3] DIT University official media kit and linked dit_main.webp logo. https://www.dituniversity.edu.in/media-kits/logo',size=20)
+    p('[4] Project source and executed workflow evidence. https://github.com/prxns/Lexical-Analyzer',size=20)
+    sub('Demonstration and developer checks')
+    code('\n'.join(['Double-click: dist\\LexicalAnalyzer.exe','Fallback: run.bat',
+        'Portable CLI: dist\\lexical_analyzer.exe samples\\demo.c',
+        'Developer build: build.bat',
+        'CLI tests: python tests/test_lexer.py --exe dist/lexical_analyzer.exe',
+        'GUI tests: python tests/test_gui.py --exe dist/LexicalAnalyzer.exe']))
+    p('Source files, both samples, complete execution transcripts, screenshot originals, test records and executable/report hashes are supplied with the project. Enlarged report figures are crops of those genuine screenshots; they do not change application content.',size=20)
     sect = '''<w:sectPr><w:headerReference w:type="default" r:id="header"/><w:footerReference w:type="default" r:id="footer"/><w:titlePg/>
     <w:pgSz w:w="11906" w:h="16838"/><w:pgMar w:top="1134" w:right="1440" w:bottom="1134" w:left="1440" w:header="567" w:footer="567"/>
     </w:sectPr>'''
@@ -380,11 +400,12 @@ run_demo.bat''')
     types = '''<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Default Extension="png" ContentType="image/png"/>'''
     for part, mime in [('document','document.main'),('styles','styles'),('header1','header'),('footer1','footer')]:
         types += f'<Override PartName="/word/{part}.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.{mime}+xml"/>'
-    types += '</Types>'
+    types += '<Override PartName="/docProps/core.xml" ContentType="application/vnd.openxmlformats-package.core-properties+xml"/></Types>'
     output = DOCS/'Lexical_Analyzer_Report.docx'
     with ZipFile(output,'w',ZIP_DEFLATED) as z:
         z.writestr('[Content_Types].xml',types)
-        z.writestr('_rels/.rels',f'<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="document" Type="{RNS}/officeDocument" Target="word/document.xml"/></Relationships>')
+        z.writestr('_rels/.rels',f'<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="document" Type="{RNS}/officeDocument" Target="word/document.xml"/><Relationship Id="core" Type="http://schemas.openxmlformats.org/package/2006/relationships/metadata/core-properties" Target="docProps/core.xml"/></Relationships>')
+        z.writestr('docProps/core.xml','<cp:coreProperties xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties" xmlns:dc="http://purl.org/dc/elements/1.1/"><dc:title>Design and Implementation of a Lexical Analyzer</dc:title><dc:creator>Pranshu Rawat</dc:creator><dc:subject>Compiler Design native Windows desktop application</dc:subject><cp:keywords>C11 Win32 lexical analysis</cp:keywords></cp:coreProperties>')
         z.writestr('word/document.xml',document)
         z.writestr('word/styles.xml',styles)
         z.writestr('word/_rels/document.xml.rels',rels)

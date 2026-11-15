@@ -1,62 +1,79 @@
-# Verification record
+# Desktop upgrade verification
 
-The scanner source at commit `eed408193de72970187dc0423cca1973d3b046a7`
-was compiled and exercised in [GitHub Actions run 43725899657](https://github.com/prxns/Lexical-Analyzer/actions/runs/43725899657).
+The native application reuses the scanner merged by PR #1. Its source of truth is
+still `src/lexer.c`, reached through `analysis_scan` in the desktop result model.
+No tokenization is implemented in Python or in a separate UI engine.
 
-| Environment | Build and executed checks | Result |
-|---|---|---|
-| Windows hosted runner, GCC 15.2.0 | Strict C11 compilation; 36 regression methods | Passed |
-| Linux hosted runner, GCC | Strict C11 compilation; 36 regression methods | Passed |
-| Linux hosted runner, Clang | Strict C11 compilation; 36 regression methods | Passed |
-| Linux hosted runner, Clang sanitizers | AddressSanitizer and UndefinedBehaviorSanitizer; 36 methods | Passed |
-| Local Windows laptop | Downloaded Windows executable; 36 regression methods | Passed |
+## Executed checks
 
-Compilation used `-std=c11 -Wall -Wextra -Wpedantic -Werror -O2`.
-The instrumented build used `-g -O1 -fsanitize=address,undefined -fno-omit-frame-pointer`.
-No compiler warnings or sanitizer failures were reported by those runs.
+[GitHub Actions run 43757085737](https://github.com/prxns/Lexical-Analyzer/actions/runs/43757085737)
+tested source commit `bd834b5e0c7a98514c39f9490eb61c830e1ac1d1`.
 
-The tests include multiple subcases per method and 120 deterministic random-byte
-inputs. They test the documented subset rather than full C language compliance.
-Memory allocation and cleanup were also reviewed in `read_source` and `main`:
-the input buffer grows with overflow checks, realloc failure retains ownership
-until cleanup, and returned tokens borrow the input without additional allocation.
+| Check | Actual outcome |
+|---|---|
+| Original scanner suite | All 36 methods passed on Windows GCC, Linux GCC and Linux Clang |
+| Shared C analysis integration | Passed on all three compiler/platform builds |
+| Sanitizers | Scanner suite and C analysis integration passed under AddressSanitizer and UndefinedBehaviorSanitizer |
+| Native Windows GUI workflow suite | All 13 methods passed against `dist/LexicalAnalyzer.exe` |
+| Distribution inspection | x64 Windows GUI subsystem, per-monitor DPI manifest, system DLLs only and packaged samples verified |
+| Windows build/demo scripts | Executed successfully |
 
-## Actual demonstrations
+All builds use C11 with `-Wall -Wextra -Wpedantic -Werror`. The original scanner
+and command-line interface are preserved. Actual C integration output is in
+`analysis-test-output.txt`.
 
-| Input | Valid tokens | Lexical errors | Exit code |
+## Native workflows actually exercised
+
+The GUI suite starts its own packaged executable and targets only that process's
+windows. Expected categories and aggregates come from the real CLI. It exercised
+launch, controls, valid analysis, both sample buttons, diagnostics, search/category
+intersection, clearing results, empty input, saving source, opening through the
+native file dialog, exporting CSV through the native save dialog, editing during
+analysis, cancellation, resizing and double-click source navigation.
+
+`gui-test-results.json` records every executed method and the tested executable's
+SHA-256. `gui-export-results.csv` is the actual 128-row exported file, parsed and
+checked by the suite.
+
+| Input | Valid tokens | Errors | Desktop constants |
 |---|---:|---:|---:|
-| `samples/demo.c` | 128 | 0 | 0 |
-| `samples/errors.c` | 16 | 6 | 1 |
+| Valid demo | 128 | 0 | 18 |
+| Error sample | 16 | 6 | 0 |
+| Empty editor | 0 | 0 | 0 |
 
-See the complete `demo-output.txt`, `errors-output.txt` and `demo-tokens.json`.
-`execution-results.json` records the executable SHA-256 and observed statuses.
-The supplied `dist/lexical_analyzer.exe` is the verified Windows runner binary.
+## Screenshot provenance
 
-## Academic report reproduction
+Files in `screenshots/` are genuine Windows PrintWindow captures of the running
+native executable during the GUI tests. They are lossless PNGs, not mockups or
+re-created screens. Enlarged report figures crop those same pixels without
+altering results. A source caption may identify the temporary test copy named
+`source with spaces.c`.
 
-`tools/generate_report.py` builds the editable DOCX from these executed test
-records, sample source files and transcripts. Its optional authoring dependency
-is Pillow for the flowchart; it uses an available Windows Calibri font. The
-application and its tests do not depend on Pillow.
+`gui-verification.json` identifies the run, commit and binary hash. Local
+interactive launch approval timed out; no claim is made that this automation
+completed the GUI launch on the user's laptop. Actual native launch and workflow
+verification took place on the Windows runner. The local CLI and C analysis
+executables were also run successfully.
 
-`tools/export_report.py` extracts the DOCX paragraphs, tables and images into
-temporary paginated HTML, preserving the report content and page divisions, and
-prints that layout with an existing Chromium browser. It checks content height
-before export. It does not install dependencies, access a personal browser
-profile, or change the DOCX. This provides a PDF export when native Word
-automation is unavailable. The final visual review uses the exported PDF.
+## Reports
 
-The report includes genuine execution transcripts in place of terminal
-screenshots. No sample formatting reference was present in the project folder.
-University branding comes from the official media kit; its source is documented
-in `assets/README.md`. No faculty details, certification or signatures are invented.
+The DOCX is generated from executed test records and real screenshots. The PDF
+uses the DOCX paragraphs, tables and image data. `tools/verify_documents.py`
+checks ZIP CRCs, XML, relationships, image CRCs, student details, PDF structure
+and matching page counts. Every PDF page is rendered for visual review. These
+documentation tools are not application dependencies.
 
-## Local build prerequisite
+The upgraded 14-page DOCX and PDF passed the integrity checks in
+[run 43758736072](https://github.com/prxns/Lexical-Analyzer/actions/runs/43758736072).
+All 14 rendered PDF pages were visually inspected: the cover branding, student
+details, architecture, genuine screenshots, tables and references are readable,
+with no clipped content or extra blank pages. Final executable and document
+SHA-256 values are recorded in `deliverable-sha256.json`.
 
-No usable local C compiler was found during inspection. The scripts report this
-condition clearly. A C11-compatible GCC toolchain on PATH is needed to rebuild;
-the verified Windows executable can be demonstrated without that toolchain.
+## Documented boundaries
 
-## Report export verification
-
-The final report was exported and all 12 PDF pages rendered in [Actions run 43730041629](https://github.com/prxns/Lexical-Analyzer/actions/runs/43730041629). The page count matches the 12 logical DOCX page divisions. Every rendered page was visually reviewed, including the cover branding, contents, flowchart, execution transcripts and test tables. The DOCX package XML and relationships were parsed successfully.
+Desktop limits are 4 MiB of UTF-8 source and 500,000 result rows. The editor uses
+CRLF snapshots and removes a UTF-8 BOM when opening a text file. Lexical rules
+remain the ASCII C11 subset. The scanner is not a parser or full C front end;
+numeric range, declarations, types and meaning remain outside scope. DPI support
+is implemented; exhaustive multi-monitor hardware testing is not claimed.

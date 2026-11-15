@@ -1,0 +1,22 @@
+{
+  "tests_run": 13,
+  "successful": true,
+  "passed": [
+    "test_01_native_launch_and_controls",
+    "test_02_actual_demo_results",
+    "test_03_load_sample_button",
+    "test_04_error_sample_and_diagnostics",
+    "test_05_search_and_category_intersection",
+    "test_06_clear_results_retains_source",
+    "test_07_clear_editor_and_empty_analysis",
+    "test_08_save_file",
+    "test_09_open_file_dialog",
+    "test_10_export_actual_csv",
+    "test_11_edit_invalidates_results_and_worker_stays_responsive",
+    "test_12_cancel_and_resize",
+    "test_13_double_click_locates_token"
+  ],
+  "failures": [],
+  "errors": [],
+  "executable_sha256": "3820db7f64df0746f3fb9dbfe41f9bc65478055659d2aebf4d7f11a1e55ed421"
+}

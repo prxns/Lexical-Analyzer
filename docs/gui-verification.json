@@ -1,0 +1,9 @@
+{
+  "run_id": 43757085737,
+  "source_commit": "bd834b5e0c7a98514c39f9490eb61c830e1ac1d1",
+  "gui_tests": 13,
+  "successful": true,
+  "executable_sha256": "3820db7f64df0746f3fb9dbfe41f9bc65478055659d2aebf4d7f11a1e55ed421",
+  "screenshots": "Windows PrintWindow captures from the real packaged native executable",
+  "local_launch": "The interactive application launch approval timed out; native workflow tests ran on Windows CI."
+}
