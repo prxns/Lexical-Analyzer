@@ -501,8 +501,8 @@ static void layout_window(void)
     move(diagnostic_list, right_x + scaled(12), diagnostics_panel.top + scaled(38), right_width - scaled(24), diag_height - scaled(50));
     move(diagnostic_empty, right_x + scaled(22), diagnostics_panel.top + scaled(66), right_width - scaled(44), scaled(65));
     move(footer, margin, height - scaled(36), width - 2 * margin, scaled(22));
-    ListView_SetColumnWidth(token_list, 0, scaled(58));
-    ListView_SetColumnWidth(token_list, 1, maximum(scaled(120), right_width - scaled(334)));
+    ListView_SetColumnWidth(token_list, 0, scaled(74));
+    ListView_SetColumnWidth(token_list, 1, maximum(scaled(120), right_width - scaled(369)));
     ListView_SetColumnWidth(token_list, 2, scaled(132));
     ListView_SetColumnWidth(token_list, 3, scaled(55)); ListView_SetColumnWidth(token_list, 4, scaled(65));
     ListView_SetColumnWidth(diagnostic_list, 0, scaled(76));
@@ -676,6 +676,7 @@ static void create_controls(void)
     size_t i;
     editor = child(MSFTEDIT_CLASS, L"", WS_TABSTOP | WS_VSCROLL | WS_HSCROLL | ES_MULTILINE | ES_AUTOVSCROLL | ES_AUTOHSCROLL | ES_NOHIDESEL | ES_WANTRETURN, ID_EDITOR);
     SendMessageW(editor, EM_SETBKGNDCOLOR, 0, EDIT_BG);
+    SetWindowTheme(editor, L"DarkMode_Explorer", NULL);
     SendMessageW(editor, EM_EXLIMITTEXT, 0, SOURCE_LIMIT);
     SendMessageW(editor, EM_SETEVENTMASK, 0, ENM_CHANGE | ENM_SCROLL | ENM_UPDATE);
     SetWindowSubclass(editor, editor_proc, 1, 0);
@@ -795,7 +796,7 @@ static LRESULT custom_list_draw(NMLVCUSTOMDRAW *draw)
         size_t row = (size_t)draw->nmcd.dwItemSpec;
         TokenKind kind = TOKEN_ERROR;
         if (draw->nmcd.hdr.hwndFrom == token_list && row < visible_count) kind = results.tokens[visible_rows[row]].kind;
-        draw->clrTextBk = (draw->nmcd.uItemState & CDIS_SELECTED) ? RGB(39, 65, 88) : EDIT_BG;
+        draw->clrTextBk = ListView_GetItemState(draw->nmcd.hdr.hwndFrom, (int)row, LVIS_SELECTED) ? RGB(39, 65, 88) : EDIT_BG;
         draw->clrText = TEXT_COLOR;
         if (draw->nmcd.hdr.hwndFrom == diagnostic_list) draw->clrText = RED;
         else if (draw->iSubItem == 2) {
@@ -888,6 +889,7 @@ static LRESULT CALLBACK window_proc(HWND window, UINT message, WPARAM wp, LPARAM
             int primary = draw->CtlID == ID_ANALYZE, hovered, disabled = (draw->itemState & ODS_DISABLED) != 0;
             GetCursorPos(&cursor); GetWindowRect(draw->hwndItem, &bounds); hovered = PtInRect(&bounds, cursor);
             GetWindowTextW(draw->hwndItem, caption, (int)COUNT_OF(caption));
+            fill(draw->hDC, &rect, draw->CtlID == ID_CLEAR_RESULTS || draw->CtlID == ID_EXPORT ? EDIT_BG : BG);
             rounded(draw->hDC, rect, primary ? (disabled ? BORDER : ACCENT) : (hovered ? RGB(40, 54, 74) : PANEL),
                     (draw->itemState & ODS_FOCUS) ? ACCENT : (primary ? ACCENT : BORDER), scaled(7));
             if (draw->itemState & ODS_SELECTED) OffsetRect(&rect, 0, 1);

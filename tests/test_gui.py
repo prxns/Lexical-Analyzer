@@ -36,6 +36,8 @@ U.GetWindowTextLengthW.argtypes = [W.HWND]
 U.GetDlgItem.argtypes = [W.HWND, C.c_int]
 U.GetDlgItem.restype = W.HWND
 U.GetDlgCtrlID.argtypes = [W.HWND]
+U.GetParent.argtypes = [W.HWND]
+U.GetParent.restype = W.HWND
 U.IsWindowVisible.argtypes = [W.HWND]
 U.SendMessageW.argtypes = [W.HWND, W.UINT, W.WPARAM, W.LPARAM]
 U.SendMessageW.restype = C.c_ssize_t
@@ -202,13 +204,23 @@ class GuiTests(unittest.TestCase):
 
     def choose_dialog_file(self, title, path):
         dialog = wait_for(lambda: next((h for h in owned_windows(self.process.pid) if class_name(h) == '#32770' and window_text(h) == title), None))
-        name = next((h for h in descendants(dialog) if class_name(h).lower() == 'edit' and U.GetDlgCtrlID(h) == 0x480), None)
-        if not name:
-            combo = next((h for h in descendants(dialog) if U.GetDlgCtrlID(h) == 0x47C), None)
-            name = next((h for h in descendants(combo) if class_name(h).lower() == 'edit'), None) if combo else None
-        self.assertTrue(name, 'Native file name edit field was not found')
+        def find_name():
+            edits=[h for h in descendants(dialog) if class_name(h).lower() == 'edit' and U.IsWindowVisible(h)]
+            exact=next((h for h in edits if U.GetDlgCtrlID(h)==0x480 or U.GetDlgCtrlID(U.GetParent(h))==0x47C),None)
+            if exact:
+                return exact
+            return next((h for h in edits if U.GetDlgCtrlID(h)==1001),None)
+        try:
+            name=wait_for(find_name,5)
+        except AssertionError:
+            print('FILE DIALOG CONTROLS:',[(class_name(h),U.GetDlgCtrlID(h),window_text(h)[:160]) for h in descendants(dialog)],flush=True)
+            png_capture(dialog,self.screenshots/('dialog-'+title.replace(' ','-')+'.png'))
+            raise
         send_text(name,str(path))
-        U.PostMessageW(dialog,0x0111,1,0)
+        # Explorer dialogs commit their filename edit on focus change; use the
+        # actual dialog button after the edit has accepted the text.
+        time.sleep(.15)
+        U.PostMessageW(U.GetDlgItem(dialog,1),0x00F5,0,0)
         return dialog
 
     def test_01_native_launch_and_controls(self):
@@ -310,8 +322,11 @@ class GuiTests(unittest.TestCase):
         self.assertLess(time.monotonic()-started,2)
         send_text(self.control(100),'int latest = 1;')
         wait_for(lambda:window_text(self.control(141)) != 'ANALYZING')
-        self.assertEqual(self.total(),'-')
-        self.analyze()
+        # The worker may start after the edit or finish before it. Both are
+        # valid, but an old one-token result must never survive the new edit.
+        self.assertIn(self.total(),('-','5'))
+        if self.total()=='-':
+            self.analyze()
         self.assertEqual(self.total(),'5')
 
     def test_12_cancel_and_resize(self):
