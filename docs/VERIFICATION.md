@@ -63,6 +63,13 @@ checks ZIP CRCs, XML, relationships, image CRCs, student details, PDF structure
 and matching page counts. Every PDF page is rendered for visual review. These
 documentation tools are not application dependencies.
 
+The upgraded 14-page DOCX and PDF passed the integrity checks in
+[run 43758736072](https://github.com/prxns/Lexical-Analyzer/actions/runs/43758736072).
+All 14 rendered PDF pages were visually inspected: the cover branding, student
+details, architecture, genuine screenshots, tables and references are readable,
+with no clipped content or extra blank pages. Final executable and document
+SHA-256 values are recorded in `deliverable-sha256.json`.
+
 ## Documented boundaries
 
 Desktop limits are 4 MiB of UTF-8 source and 500,000 result rows. The editor uses
