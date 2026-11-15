@@ -1,0 +1,1 @@
+Analysis integration checks passed: scanner results, aggregates, filters, CSV, cancellation, empty input and long lexemes.

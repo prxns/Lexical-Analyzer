@@ -94,6 +94,7 @@ jobs:
         shell: pwsh
         run: |
           python tools/export_report.py --browser 'C:\Program Files\Google\Chrome\Application\chrome.exe'
+          python tools/verify_documents.py
       - name: Render every exported page for visual review
         shell: powershell
         run: .\tools\render_pdf.ps1 -InputPdf docs/Lexical_Analyzer_Report.pdf -OutputDirectory tmp/report-pages

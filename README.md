@@ -72,6 +72,7 @@ external GUI framework, web server or database is involved.
 | `tests/test_lexer.py` | Standard-library black-box regression and randomized tests |
 | `tests/test_analysis.c` | Portable shared-analysis integration checks |
 | `tests/test_gui.py` | Real packaged Windows GUI workflow tests |
+| `tests/test_distribution.py` | PE subsystem, DPI manifest, system DLL and sample-package checks |
 | `resources/` | Application icon/version resource and high-DPI manifest |
 | `dist/LexicalAnalyzer.exe` | Ready-to-run native desktop application |
 | `.github/workflows/ci.yml` | GCC/Clang builds and sanitizer checks |
@@ -125,7 +126,7 @@ Or run `.\run_demo.bat` to build and demonstrate in one step. The build script
 changes to its own directory, so launching from a path containing spaces works.
 The error sample intentionally returns exit code 1.
 
-Equivalent compiler command:
+Equivalent CLI-only compiler command:
 
 ```powershell
 gcc -std=c11 -Wall -Wextra -Wpedantic -Werror -O2 -Iinclude src/main.c src/lexer.c -o build/lexical_analyzer.exe
@@ -184,7 +185,20 @@ positions, all operators, numeric/escape errors, comment handling, EOF, recovery
 large lexemes, large files, CLI statuses, JSON consistency and the sample inputs.
 CI additionally runs the same suite under AddressSanitizer and
 UndefinedBehaviorSanitizer. The workflow uploads executables and actual transcripts.
-Verified results and generated sample output are recorded in `docs/` after execution.
+Verified results, genuine screenshots and sample output are recorded in `docs/`.
+
+The new C analysis-model checks run with `make test` on POSIX. On Windows, after
+building, the complete native workflow and distribution checks can be run with:
+
+```powershell
+python tests/test_gui.py --exe dist/LexicalAnalyzer.exe --cli dist/lexical_analyzer.exe
+python tests/test_distribution.py
+```
+
+The desktop suite launches its own real application process. It checks the
+controls and compares visible counts against the actual CLI, exercises native
+file dialogs and exports, and captures genuine screenshots. Python implements
+only test automation; it never tokenizes source code for the desktop.
 
 The main sample is a short array-accumulation program with decimal, octal,
 hexadecimal, floating, string and character examples; it uses a loop, conditional
@@ -194,7 +208,7 @@ operators and formatted output. View its complete source in `samples/demo.c`.
 
 The supplied sample program is:
 
-`c
+```c
 #include <stdio.h>
 
 /* A small program for the Compiler Design demonstration. */
@@ -214,11 +228,11 @@ int main(void) {
     }
     return total > (int)limit ? 0 : 1;
 }
-`
+```
 
 Actual output excerpt from the verified Windows executable:
 
-`	ext
+```text
 Lexical Analyzer | C11 subset
 Source: samples/demo.c
 
@@ -243,7 +257,7 @@ Token summary
   Punctuator    43
 Total tokens: 128
 Lexical errors: 0
-`
+```
 
 ## Supported subset and limitations
 
