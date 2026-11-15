@@ -1,7 +1,7 @@
 name: C11 build and tests
 on:
   push:
-    branches: [main, feature/lexical-analyzer]
+    branches: [main, feature/lexical-analyzer, feature/windows-gui]
   pull_request:
     branches: [main]
 permissions:
@@ -31,6 +31,11 @@ jobs:
       - name: Run black box regression tests
         shell: bash
         run: python tests/test_lexer.py --report build/test-results.json
+      - name: Test shared desktop analysis integration
+        shell: bash
+        run: |
+          ${{ matrix.compiler }} -std=c11 -Wall -Wextra -Wpedantic -Werror -O2 -Iinclude tests/test_analysis.c src/analysis.c src/lexer.c -o build/test_analysis${{ runner.os == 'Windows' && '.exe' || '' }}
+          build/test_analysis
       - name: Verify Windows build and demo scripts
         if: runner.os == 'Windows'
         shell: cmd
@@ -62,6 +67,8 @@ jobs:
           mkdir -p build
           clang -std=c11 -Wall -Wextra -Wpedantic -Werror -g -O1 -fsanitize=address,undefined -fno-omit-frame-pointer -Iinclude src/main.c src/lexer.c -o build/lexical_analyzer
           python3 tests/test_lexer.py --report build/sanitizer-results.json
+          clang -std=c11 -Wall -Wextra -Wpedantic -Werror -g -O1 -fsanitize=address,undefined -fno-omit-frame-pointer -Iinclude tests/test_analysis.c src/analysis.c src/lexer.c -o build/test_analysis
+          build/test_analysis
       - uses: actions/upload-artifact@v4
         with:
           name: sanitizer-results
