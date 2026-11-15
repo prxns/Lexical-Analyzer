@@ -1,0 +1,89 @@
+name: C11 build and tests
+on:
+  push:
+    branches: [main, feature/lexical-analyzer]
+  pull_request:
+    branches: [main]
+permissions:
+  contents: read
+jobs:
+  test:
+    name: ${{ matrix.os }} ${{ matrix.compiler }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            compiler: gcc
+          - os: ubuntu-latest
+            compiler: clang
+          - os: windows-latest
+            compiler: gcc
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build with strict C11 warnings
+        shell: bash
+        run: |
+          mkdir -p build
+          ${{ matrix.compiler }} --version > build/compiler.txt
+          ${{ matrix.compiler }} -std=c11 -Wall -Wextra -Wpedantic -Werror -O2 -Iinclude src/main.c src/lexer.c -o build/lexical_analyzer${{ runner.os == 'Windows' && '.exe' || '' }}
+      - name: Run black box regression tests
+        shell: bash
+        run: python tests/test_lexer.py --report build/test-results.json
+      - name: Verify Windows build and demo scripts
+        if: runner.os == 'Windows'
+        shell: cmd
+        run: |
+          call build.bat
+          if errorlevel 1 exit /b 1
+          call run_demo.bat
+          if errorlevel 1 exit /b 1
+      - name: Capture genuine demonstration output
+        shell: bash
+        run: |
+          build/lexical_analyzer samples/demo.c > build/demo-output.txt
+          build/lexical_analyzer --json samples/demo.c > build/demo-tokens.json
+          set +e
+          build/lexical_analyzer samples/errors.c > build/error-output.txt
+          status=$?
+          test "$status" -eq 1
+      - uses: actions/upload-artifact@v4
+        with:
+          name: verified-${{ matrix.os }}-${{ matrix.compiler }}
+          path: build/
+  sanitize:
+    name: Address and undefined behavior sanitizers
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build and exercise instrumented scanner
+        run: |
+          mkdir -p build
+          clang -std=c11 -Wall -Wextra -Wpedantic -Werror -g -O1 -fsanitize=address,undefined -fno-omit-frame-pointer -Iinclude src/main.c src/lexer.c -o build/lexical_analyzer
+          python3 tests/test_lexer.py --report build/sanitizer-results.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: sanitizer-results
+          path: build/sanitizer-results.json
+  report:
+    name: Academic report export
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Export the editable master without installing dependencies
+        shell: pwsh
+        run: |
+          python tools/export_report.py --browser 'C:\Program Files\Google\Chrome\Application\chrome.exe'
+      - name: Render every exported page for visual review
+        shell: powershell
+        run: .\tools\render_pdf.ps1 -InputPdf docs/Lexical_Analyzer_Report.pdf -OutputDirectory tmp/report-pages
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: academic-report
+          path: |
+            docs/Lexical_Analyzer_Report.pdf
+            tmp/report-render/layout-metrics.json
+            tmp/report-render/*.log
+            tmp/report-pages/*.png

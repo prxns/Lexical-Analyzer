@@ -1,0 +1,38 @@
+Lexical Analyzer | C11 subset
+Source: samples/errors.c
+
+No.    Lexeme                    Category      Line   Column
+1      int                       Keyword       2      1
+2      value                     Identifier    2      5
+3      =                         Operator      2      11
+4      09                        Error         2      13  Malformed or unsupported numeric literal
+5      ;                         Punctuator    2      15
+6      double                    Keyword       3      1
+7      broken                    Identifier    3      8
+8      =                         Operator      3      15
+9      2e+                       Error         3      17  Malformed or unsupported numeric literal
+10     ;                         Punctuator    3      20
+11     char                      Keyword       4      1
+12     letter                    Identifier    4      6
+13     =                         Operator      4      13
+14     '\\q'                     Error         4      15  Invalid or unsupported escape sequence
+15     ;                         Punctuator    4      19
+16     char                      Keyword       5      1
+17     *                         Operator      5      6
+18     text                      Identifier    5      7
+19     =                         Operator      5      12
+20     \"not closed              Error         5      14  Unterminated string literal
+21     @                         Error         6      1  Invalid or unsupported character
+22     /* This comment never closes\n Error         7      1  Unterminated block comment
+
+Token summary
+  Keyword       4
+  Identifier    4
+  Integer       0
+  Float         0
+  String        0
+  Character     0
+  Operator      5
+  Punctuator    3
+Total tokens: 16
+Lexical errors: 6
