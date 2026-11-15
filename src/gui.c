@@ -280,7 +280,7 @@ static void load_sample(int errors)
 
 static int save_source(void)
 {
-    wchar_t path[32768];
+    wchar_t path[32768], temporary[32768];
     size_t length;
     unsigned char *bytes;
     HANDLE file;
@@ -290,12 +290,22 @@ static int save_source(void)
     if (!file_path[0] && !file_dialog(path, 1, 0)) return 0;
     bytes = editor_source(&length);
     if (bytes == NULL) return 0;
-    file = CreateFileW(path, GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+    if (wcslen(path) + 64 >= COUNT_OF(temporary)) {
+        free(bytes); show_error(L"The selected filename is too long to save safely."); return 0;
+    }
+    swprintf(temporary, COUNT_OF(temporary), L"%ls.lexical-%lu-%lu.tmp", path,
+             (unsigned long)GetCurrentProcessId(), (unsigned long)GetTickCount());
+    file = CreateFileW(temporary, GENERIC_WRITE, 0, NULL, CREATE_NEW, FILE_ATTRIBUTE_NORMAL, NULL);
     if (file == INVALID_HANDLE_VALUE) { free(bytes); show_error(L"The file could not be saved. Check its path and write permissions."); return 0; }
     ok = WriteFile(file, bytes, (DWORD)length, &written, NULL) && written == length;
+    if (ok && !FlushFileBuffers(file)) ok = 0;
     if (!CloseHandle(file)) ok = 0;
     free(bytes);
-    if (!ok) { show_error(L"The source could not be saved completely. Your editor contents have been retained."); return 0; }
+    if (ok && !MoveFileExW(temporary, path, MOVEFILE_REPLACE_EXISTING | MOVEFILE_WRITE_THROUGH)) ok = 0;
+    if (!ok) {
+        DeleteFileW(temporary);
+        show_error(L"The source could not be saved completely. The prior file and editor contents have been retained."); return 0;
+    }
     lstrcpynW(file_path, path, (int)COUNT_OF(file_path));
     lstrcpynW(file_name, base_name(path), (int)COUNT_OF(file_name)); dirty = 0;
     set_status(L"Source saved as UTF-8. Your analysis results are unchanged."); update_state(); return 1;

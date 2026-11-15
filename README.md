@@ -4,6 +4,44 @@
 Pranshu Rawat · SAP ID 1000021904 · Section D  
 B.Tech. Computer Science and Engineering
 
+## How to Run the Application
+
+1. Open the **dist** folder.
+2. Double-click **LexicalAnalyzer.exe**. It opens the desktop application directly, without a console.
+3. Click **Load Sample**, then **ANALYZE CODE**.
+4. Inspect the statistics, token table and diagnostics. Try **Error Sample** to demonstrate lexical errors.
+
+No installation, compiler, Python, Node.js, server, or VS Code is needed to run the
+packaged application. Use Windows 10 version 1703 or newer / Windows 11 x64.
+Keep the `dist/samples` folder beside the executable. If preferred, double-click
+the project's `run.bat` or `dist/run.bat` fallback.
+
+## Desktop workflow
+
+- **Open C File** opens an ASCII/UTF-8 source file. **Save File** saves UTF-8 text.
+  A sample is opened as a copy, so Save asks for a new filename.
+- The editor has line numbers, scrolling, undo, selection, monospaced text and
+  unsaved-change prompts before replacing or closing edits.
+- **Analyze Code** calls the existing C scanner through `analysis_scan` on a worker
+  thread. The button becomes **Cancel Analysis** while it runs.
+- The seven cards show actual counts. Constants combine integer, float, string
+  and character categories. Separators count C punctuators.
+- Search is case-insensitive ASCII substring matching on lexemes. Category and
+  search filters intersect; they change the table, not aggregate counts.
+- Double-click a token or diagnostic to select its source span in the editor.
+- **Export Results** writes every result row and diagnostic to CSV, including
+  rows hidden by the filter. **Clear Results** retains the source code.
+- Editing invalidates old results. An older analysis snapshot cannot replace
+  the latest editor contents with stale results.
+
+Shortcuts: **Ctrl+O** open, **Ctrl+S** save, **Ctrl+Enter** analyze/cancel,
+**Ctrl+F** token search, **Ctrl+E** export. Tab inserts a tab in the editor.
+
+Desktop limits: **4 MiB of UTF-8 source** and **500,000 result rows**. The CLI
+remains available for larger inputs. Opening a UTF-8 BOM removes that encoding
+marker; saved/editor snapshots use CRLF line endings. Lexical recognition remains
+the documented ASCII C11 subset below.
+
 ## Objective
 
 To design and implement a program that reads a source code and identifies tokens such as keywords, identifiers, constants, and operators.
@@ -15,9 +53,10 @@ and reports each lexeme with its category and one-based line and column. It uses
 longest-match recognition and recovers from lexical errors so later tokens can
 still be inspected. It is a lexical analyzer, not a parser or a complete compiler.
 
-The application uses the C11 standard library only. Python 3 is used for automated
-tests and documentation tooling; the executable runs without Python. No Lex/Flex,
-frameworks, web server, database, or graphical interface is involved.
+The scanner and analysis model use the C11 standard library. The desktop interface
+uses Win32, RichEdit and Windows common controls directly in C. Python is used only
+for tests and documentation. Neither executable needs Python. No Lex/Flex,
+external GUI framework, web server or database is involved.
 
 ## Project files
 
@@ -25,10 +64,16 @@ frameworks, web server, database, or graphical interface is involved.
 |---|---|
 | `src/main.c` | File loading, CLI, escaped token output, summary and exit status |
 | `src/lexer.c` | Character scanning, keyword lookup, literal validation and recovery |
+| `src/gui.c` | Win32 window, editor, background worker and result views |
+| `src/analysis.c`, `include/analysis.h` | Shared C result storage, counts, filtering and CSV |
 | `include/lexer.h` | Lexer state, borrowed token spans and public API |
 | `samples/demo.c` | Short valid demonstration covering every category |
 | `samples/errors.c` | Intentionally invalid demonstration input |
 | `tests/test_lexer.py` | Standard-library black-box regression and randomized tests |
+| `tests/test_analysis.c` | Portable shared-analysis integration checks |
+| `tests/test_gui.py` | Real packaged Windows GUI workflow tests |
+| `resources/` | Application icon/version resource and high-DPI manifest |
+| `dist/LexicalAnalyzer.exe` | Ready-to-run native desktop application |
 | `.github/workflows/ci.yml` | GCC/Clang builds and sanitizer checks |
 | `docs/` | Academic reports, execution transcripts and verification evidence |
 | `build.bat`, `run_demo.bat` | Windows build and demonstration scripts |
@@ -57,7 +102,10 @@ file. Tokens borrow input spans; they are not truncated or copied into fixed buf
 
 ## Windows and VS Code
 
-Prerequisite: a working **C11-compatible GCC toolchain on PATH**. VS Code and its
+This section is only for developers rebuilding the project. Running the packaged
+desktop application requires none of these tools.
+
+Prerequisite: **C11-compatible MinGW GCC and windres on PATH**. VS Code and its
 C/C++ extension alone do not supply a compiler. No software is installed by these
 scripts. Check the prerequisite in a new VS Code terminal:
 

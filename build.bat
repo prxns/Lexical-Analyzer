@@ -19,5 +19,14 @@ windres -Iresources resources/app.rc -O coff -o build/gui-resources.o
 if errorlevel 1 exit /b 1
 gcc -std=c11 -Wall -Wextra -Wpedantic -Werror -O2 -Iinclude src/gui.c src/analysis.c src/lexer.c build/gui-resources.o -municode -mwindows -static-libgcc -lcomctl32 -lcomdlg32 -lgdi32 -luser32 -lshell32 -luxtheme -ldwmapi -o build/LexicalAnalyzer.exe
 if errorlevel 1 exit /b 1
+if not exist dist mkdir dist
+if not exist dist\samples mkdir dist\samples
+copy /y build\LexicalAnalyzer.exe dist\LexicalAnalyzer.exe >nul
+if errorlevel 1 exit /b 1
+copy /y build\lexical_analyzer.exe dist\lexical_analyzer.exe >nul
+if errorlevel 1 exit /b 1
+copy /y samples\*.c dist\samples\ >nul
+if errorlevel 1 exit /b 1
 echo Built build\lexical_analyzer.exe and build\LexicalAnalyzer.exe
+echo Packaged desktop application: dist\LexicalAnalyzer.exe
 exit /b 0

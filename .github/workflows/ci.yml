@@ -59,7 +59,7 @@ jobs:
         run: |
           New-Item -ItemType Directory -Force build/samples | Out-Null
           Copy-Item samples/*.c build/samples/
-          python tests/test_gui.py --exe build/LexicalAnalyzer.exe --cli build/lexical_analyzer.exe --screenshots build/screenshots --report build/gui-test-results.json
+          python tests/test_gui.py --exe dist/LexicalAnalyzer.exe --cli dist/lexical_analyzer.exe --screenshots build/screenshots --report build/gui-test-results.json
       - uses: actions/upload-artifact@v4
         if: always()
         with:

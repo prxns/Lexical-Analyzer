@@ -206,6 +206,9 @@ class GuiTests(unittest.TestCase):
         dialog = wait_for(lambda: next((h for h in owned_windows(self.process.pid) if class_name(h) == '#32770' and window_text(h) == title), None))
         def find_name():
             edits=[h for h in descendants(dialog) if class_name(h).lower() == 'edit' and U.IsWindowVisible(h)]
+            prefilled=next((h for h in edits if window_text(h).lower().endswith('.csv')),None)
+            if prefilled:
+                return prefilled
             exact=next((h for h in edits if U.GetDlgCtrlID(h)==0x480 or U.GetDlgCtrlID(U.GetParent(h))==0x47C),None)
             if exact:
                 return exact
@@ -304,12 +307,21 @@ class GuiTests(unittest.TestCase):
         target = Path(self.folder.name)/'actual results.csv'
         self.click(117)
         self.choose_dialog_file('Export Analysis Results',target)
-        wait_for(lambda:target.exists() and 'Results exported' in window_text(self.control(140)))
+        try:
+            wait_for(lambda:target.exists() and 'Results exported' in window_text(self.control(140)))
+        except AssertionError:
+            print('EXPORT STATUS:',window_text(self.control(140)),flush=True)
+            for dialog in owned_windows(self.process.pid):
+                if class_name(dialog)=='#32770':
+                    print('EXPORT DIALOG:',window_text(dialog),[(class_name(h),U.GetDlgCtrlID(h),window_text(h)[:160]) for h in descendants(dialog)],flush=True)
+                    png_capture(dialog,self.screenshots/'dialog-export-failure.png')
+            raise
         with target.open(newline='',encoding='utf-8') as f:
             rows=list(csv.DictReader(f))
         self.assertEqual(len(rows),128)
         self.assertEqual(rows[0]['Lexeme'],'#')
         self.assertEqual(rows[0]['Token Category'],'Punctuator')
+        (self.screenshots.parent/'gui-export-results.csv').write_bytes(target.read_bytes())
 
     def test_11_edit_invalidates_results_and_worker_stays_responsive(self):
         self.analyze()
