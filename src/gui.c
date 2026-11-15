@@ -1,5 +1,9 @@
+#ifndef UNICODE
 #define UNICODE
+#endif
+#ifndef _UNICODE
 #define _UNICODE
+#endif
 #define _WIN32_WINNT 0x0A00
 #define WINVER 0x0A00
 #define _WIN32_IE 0x0600
@@ -904,7 +908,8 @@ static LRESULT CALLBACK window_proc(HWND window, UINT message, WPARAM wp, LPARAM
         switch (id) {
         case ID_OPEN: {
             wchar_t path[32768] = L"";
-            if (confirm_discard() && file_dialog(path, 0, 0)) load_source(path, 0); break;
+            if (confirm_discard() && file_dialog(path, 0, 0)) load_source(path, 0);
+            break;
         }
         case ID_SAVE: save_source(); break;
         case ID_SAMPLE: load_sample(0); break;

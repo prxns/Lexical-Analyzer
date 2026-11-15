@@ -53,7 +53,15 @@ jobs:
           build/lexical_analyzer samples/errors.c > build/error-output.txt
           status=$?
           test "$status" -eq 1
+      - name: Exercise the real Windows desktop application
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force build/samples | Out-Null
+          Copy-Item samples/*.c build/samples/
+          python tests/test_gui.py --exe build/LexicalAnalyzer.exe --cli build/lexical_analyzer.exe --screenshots build/screenshots --report build/gui-test-results.json
       - uses: actions/upload-artifact@v4
+        if: always()
         with:
           name: verified-${{ matrix.os }}-${{ matrix.compiler }}
           path: build/
