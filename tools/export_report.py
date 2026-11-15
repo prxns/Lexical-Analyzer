@@ -53,6 +53,9 @@ def convert(source):
         align = element.find(W+'pPr/'+W+'jc')
         spacing = element.find(W+'pPr/'+W+'spacing')
         css = f'text-align:{align.get(W+"val")};' if align is not None else ''
+        shade = element.find(W+'pPr/'+W+'shd')
+        if shade is not None:
+            css += 'background:#'+shade.get(W+'fill')+';width:190.3pt;margin-left:auto;margin-right:auto;padding:8pt;'
         if spacing is not None:
             for attr, rule in [('before','margin-top'),('after','margin-bottom')]:
                 if spacing.get(W+attr) is not None:
@@ -80,8 +83,8 @@ def convert(source):
             pages[-1] += table(element)
     css = '''@page {size:A4; margin:20mm 25.4mm} * {box-sizing:border-box}
     body {margin:0;color:#111;font-family:"Times New Roman",serif;font-size:12pt;line-height:1.15}
-    .page {height:256mm;position:relative;break-after:page;display:flow-root;padding-top:.01px}
-    .page:last-of-type {break-after:auto}.content{display:flow-root;padding-top:5mm;padding-bottom:5mm}
+    .page {height:256mm;position:relative;break-before:page;display:flow-root;overflow:hidden}
+    .page:first-of-type {break-before:auto}.content{display:flow-root;padding-top:10mm;padding-bottom:8mm}
     p {margin:0 0 5pt} .Title {font-size:19pt;font-weight:bold;color:black}
     .University {font-size:16pt;font-weight:bold;color:#233b59}.Subtitle{font-size:14pt}
     .Heading1{font-size:14pt;font-weight:bold;color:#233b59;break-after:avoid}
@@ -91,7 +94,7 @@ def convert(source):
     table{width:451.3pt;table-layout:fixed;border-collapse:collapse;margin:0 0 7pt;font-size:9.5pt;line-height:1.1}
     td,th{border:.5pt solid #c6cbd3;padding:3.25pt 3.75pt;vertical-align:top;text-align:left;overflow-wrap:normal}
     th{background:#e9eef4} table p{margin:0!important;line-height:1.1}
-    .header{position:absolute;right:0;top:-10mm;font-size:9pt;color:#666}
+    .header{position:absolute;right:0;top:0;font-size:9pt;color:#666}
     .footer{position:absolute;bottom:0;width:100%;text-align:center;font-size:9pt}
     img{max-width:100%;height:auto}'''
     output = '<!doctype html><html><head><meta charset="utf-8"><title>Lexical Analyzer Project Report</title><style>'+css+'</style></head><body>'
@@ -101,7 +104,7 @@ def convert(source):
             output += '<header class="header">DIT University | Compiler Design</header>'
         output += '<div class="content">' + content + '</div>'
         if i > 1:
-            output += f'<footer class="footer">Pranshu Rawat | {i}</footer>'
+            output += f'<footer class="footer">{i}</footer>'
         output += '</section>'
     output += '''<pre id="layout-metrics" style="display:none"></pre><script>
     window.addEventListener('load',()=>{document.getElementById('layout-metrics').textContent=JSON.stringify(

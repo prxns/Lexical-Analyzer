@@ -31,6 +31,14 @@ jobs:
       - name: Run black box regression tests
         shell: bash
         run: python tests/test_lexer.py --report build/test-results.json
+      - name: Verify Windows build and demo scripts
+        if: runner.os == 'Windows'
+        shell: cmd
+        run: |
+          call build.bat
+          if errorlevel 1 exit /b 1
+          call run_demo.bat
+          if errorlevel 1 exit /b 1
       - name: Capture genuine demonstration output
         shell: bash
         run: |

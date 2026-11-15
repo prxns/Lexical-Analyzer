@@ -142,6 +142,61 @@ The main sample is a short array-accumulation program with decimal, octal,
 hexadecimal, floating, string and character examples; it uses a loop, conditional
 operators and formatted output. View its complete source in `samples/demo.c`.
 
+## Demonstration result
+
+The supplied sample program is:
+
+`c
+#include <stdio.h>
+
+/* A small program for the Compiler Design demonstration. */
+int main(void) {
+    int values[3] = {10, 075, 0x2A};
+    unsigned int limit = 25U;
+    double scale = .5, epsilon = 2e-3;
+    char grade = 'A', newline = '\n';
+    const char *message = "Total:\t";
+    int total = 0;
+    // Accumulate values and exercise longest-match operators.
+    for (int i = 0; i < 3; i++) {
+        total += values[i];
+    }
+    if (total >= 10 && total != 0) {
+        printf("%s%.2f %c%c", message, total * scale + epsilon, grade, newline);
+    }
+    return total > (int)limit ? 0 : 1;
+}
+`
+
+Actual output excerpt from the verified Windows executable:
+
+`	ext
+Lexical Analyzer | C11 subset
+Source: samples/demo.c
+
+No.    Lexeme                    Category      Line   Column
+1      #                         Punctuator    1      1
+2      include                   Identifier    1      2
+3      <                         Operator      1      10
+4      stdio                     Identifier    1      11
+5      .                         Punctuator    1      16
+6      h                         Identifier    1      17
+7      >                         Operator      1      18
+8      int                       Keyword       4      1
+...
+Token summary
+  Keyword       15
+  Identifier    29
+  Integer       12
+  Float         2
+  String        2
+  Character     2
+  Operator      23
+  Punctuator    43
+Total tokens: 128
+Lexical errors: 0
+`
+
 ## Supported subset and limitations
 
 - The input is ASCII C-like source. Non-ASCII bytes and embedded NUL are rejected

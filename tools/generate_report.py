@@ -65,7 +65,7 @@ def table(headers, rows, widths, font=19):
     body.append(xml)
 
 
-def image(filename, width_inches):
+def image(filename, width_inches, dark_panel=False):
     image_path = ROOT / filename
     with Image.open(image_path) as im:
         w, h = im.size
@@ -73,7 +73,8 @@ def image(filename, width_inches):
     cy = int(cx * h / w)
     number = len(images) + 1
     images.append(image_path)
-    body.append(f'''<w:p><w:pPr><w:jc w:val="center"/></w:pPr><w:r><w:drawing>
+    panel = '<w:shd w:fill="233B59"/><w:ind w:left="2610" w:right="2610"/>' if dark_panel else ''
+    body.append(f'''<w:p><w:pPr><w:jc w:val="center"/>{panel}</w:pPr><w:r><w:drawing>
     <wp:inline xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing">
       <wp:extent cx="{cx}" cy="{cy}"/><wp:docPr id="{number}" name="{escape(image_path.stem)}" descr="{escape(image_path.stem)}"/>
       <a:graphic xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture">
@@ -143,7 +144,7 @@ def build():
 
     # Page 1
     p('', after=240)
-    image('assets/dit-logo.png', 2.0)
+    image('assets/dit-logo.png', 2.0, dark_panel=True)
     p('DIT UNIVERSITY', 'University', 'center', after=360)
     p('DESIGN AND IMPLEMENTATION\nOF A LEXICAL ANALYZER', 'Title', 'center', after=300)
     p('Academic Project Report', 'Subtitle', 'center', after=180)
@@ -255,7 +256,7 @@ return errors ? 1 : 0''')
     page()
 
     # Page 8
-    heading('10 Results and Execution Continued')
+    heading('10 Lexical Error Demonstration')
     sub('Lexical error demonstration')
     p('The second input deliberately contains invalid octal digits, an incomplete exponent, an invalid escape, an unclosed string, an unsupported character and an unclosed block comment. The scanner returns six diagnostic rows while preserving the positions of the valid tokens around them.')
     code((ROOT/'samples/errors.c').read_text())
@@ -388,7 +389,7 @@ run_demo.bat''')
         z.writestr('word/styles.xml',styles)
         z.writestr('word/_rels/document.xml.rels',rels)
         z.writestr('word/header1.xml',f'<w:hdr xmlns:w="{NS}"><w:p><w:pPr><w:jc w:val="right"/></w:pPr><w:r><w:rPr><w:sz w:val="18"/><w:color w:val="666666"/></w:rPr><w:t>DIT University  |  Compiler Design</w:t></w:r></w:p></w:hdr>')
-        z.writestr('word/footer1.xml',f'<w:ftr xmlns:w="{NS}"><w:p><w:pPr><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:sz w:val="18"/></w:rPr><w:t>Pranshu Rawat  |  </w:t></w:r><w:fldSimple w:instr="PAGE"><w:r><w:t>1</w:t></w:r></w:fldSimple></w:p></w:ftr>')
+        z.writestr('word/footer1.xml',f'<w:ftr xmlns:w="{NS}"><w:p><w:pPr><w:jc w:val="center"/></w:pPr><w:fldSimple w:instr="PAGE"><w:r><w:rPr><w:sz w:val="18"/></w:rPr><w:t>1</w:t></w:r></w:fldSimple></w:p></w:ftr>')
         for i, img in enumerate(images,1):
             z.write(img,f'word/media/image{i}.png')
     print(f'Created editable report: {output}')
