@@ -56,3 +56,7 @@ in `assets/README.md`. No faculty details, certification or signatures are inven
 No usable local C compiler was found during inspection. The scripts report this
 condition clearly. A C11-compatible GCC toolchain on PATH is needed to rebuild;
 the verified Windows executable can be demonstrated without that toolchain.
+
+## Report export verification
+
+The final report was exported and all 12 PDF pages rendered in [Actions run 43730041629](https://github.com/prxns/Lexical-Analyzer/actions/runs/43730041629). The page count matches the 12 logical DOCX page divisions. Every rendered page was visually reviewed, including the cover branding, contents, flowchart, execution transcripts and test tables. The DOCX package XML and relationships were parsed successfully.
