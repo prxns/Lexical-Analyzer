@@ -80,7 +80,8 @@ def convert(source):
             pages[-1] += table(element)
     css = '''@page {size:A4; margin:20mm 25.4mm} * {box-sizing:border-box}
     body {margin:0;color:#111;font-family:"Times New Roman",serif;font-size:12pt;line-height:1.15}
-    .page {height:256mm;position:relative;break-after:page} .page:last-of-type {break-after:auto}
+    .page {height:256mm;position:relative;break-after:page;display:flow-root;padding-top:.01px}
+    .page:last-of-type {break-after:auto}.content{display:flow-root;padding-top:5mm;padding-bottom:5mm}
     p {margin:0 0 5pt} .Title {font-size:19pt;font-weight:bold;color:black}
     .University {font-size:16pt;font-weight:bold;color:#233b59}.Subtitle{font-size:14pt}
     .Heading1{font-size:14pt;font-weight:bold;color:#233b59;break-after:avoid}
@@ -90,8 +91,8 @@ def convert(source):
     table{width:451.3pt;table-layout:fixed;border-collapse:collapse;margin:0 0 7pt;font-size:9.5pt;line-height:1.1}
     td,th{border:.5pt solid #c6cbd3;padding:3.25pt 3.75pt;vertical-align:top;text-align:left;overflow-wrap:normal}
     th{background:#e9eef4} table p{margin:0!important;line-height:1.1}
-    .header{position:absolute;right:0;top:-12mm;font-size:9pt;color:#666}
-    .footer{position:absolute;bottom:-12mm;width:100%;text-align:center;font-size:9pt}
+    .header{position:absolute;right:0;top:-10mm;font-size:9pt;color:#666}
+    .footer{position:absolute;bottom:0;width:100%;text-align:center;font-size:9pt}
     img{max-width:100%;height:auto}'''
     output = '<!doctype html><html><head><meta charset="utf-8"><title>Lexical Analyzer Project Report</title><style>'+css+'</style></head><body>'
     for i, content in enumerate(pages, 1):
@@ -141,4 +142,8 @@ if __name__ == '__main__':
     (scratch/'browser-export.log').write_bytes(result.stderr)
     if result.returncode or not output.is_file():
         raise RuntimeError('PDF export failed; see browser-export.log')
-    print(json.dumps({'pdf':str(output),'logical_pages':count,'bytes':output.stat().st_size,'layout':metrics},indent=2))
+    actual_pages = len(re.findall(rb'/Type\s*/Page\b', output.read_bytes()))
+    if actual_pages != count:
+        raise RuntimeError(f'PDF pagination mismatch: {actual_pages} physical pages for {count} report pages')
+    print(json.dumps({'pdf':str(output),'logical_pages':count,'physical_pages':actual_pages,
+                      'bytes':output.stat().st_size,'layout':metrics},indent=2))
