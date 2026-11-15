@@ -219,7 +219,14 @@ class GuiTests(unittest.TestCase):
             print('FILE DIALOG CONTROLS:',[(class_name(h),U.GetDlgCtrlID(h),window_text(h)[:160]) for h in descendants(dialog)],flush=True)
             png_capture(dialog,self.screenshots/('dialog-'+title.replace(' ','-')+'.png'))
             raise
-        send_text(name,str(path))
+        buffer=C.create_unicode_buffer(str(path))
+        U.SendMessageW(name,0x00B1,0,-1)  # EM_SETSEL
+        U.SendMessageW(name,0x00C2,1,C.cast(buffer,C.c_void_p).value)  # EM_REPLACESEL
+        parent=U.GetParent(name)
+        if class_name(parent).lower()=='combobox':
+            send_text(parent,str(path))
+        U.SendMessageW(parent,0x0111,U.GetDlgCtrlID(name)|(0x0300<<16),name)
+        print('FILE NAME SET:',title,'id',U.GetDlgCtrlID(name),'parent',class_name(parent),'value',window_text(name),flush=True)
         # Explorer dialogs commit their filename edit on focus change; use the
         # actual dialog button after the edit has accepted the text.
         time.sleep(.15)

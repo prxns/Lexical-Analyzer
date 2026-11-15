@@ -35,7 +35,7 @@ jobs:
         shell: bash
         run: |
           ${{ matrix.compiler }} -std=c11 -Wall -Wextra -Wpedantic -Werror -O2 -Iinclude tests/test_analysis.c src/analysis.c src/lexer.c -o build/test_analysis${{ runner.os == 'Windows' && '.exe' || '' }}
-          build/test_analysis
+          build/test_analysis | tee build/analysis-test-output.txt
       - name: Verify Windows build and demo scripts
         if: runner.os == 'Windows'
         shell: cmd
@@ -44,6 +44,10 @@ jobs:
           if errorlevel 1 exit /b 1
           call run_demo.bat
           if errorlevel 1 exit /b 1
+      - name: Verify the self contained Windows distribution
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: python tests/test_distribution.py
       - name: Capture genuine demonstration output
         shell: bash
         run: |
